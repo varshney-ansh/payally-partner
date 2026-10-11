@@ -1,5 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client"
-import { Box, Button, ButtonDropdown, Container, ContentLayout, Divider, ExpandableSection, Form, FormField, Header, Icon, Input, Link, Select, SelectProps, SpaceBetween, StatusIndicator } from "@cloudscape-design/components";
+import { Box, Button, ButtonDropdown, Container, Divider, ExpandableSection, Form, FormField, Header, Icon, Input, Link, Select, SelectProps, SpaceBetween, StatusIndicator } from "@cloudscape-design/components";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,10 +14,6 @@ export default function SignupPage() {
     const [stepperIndex, setStepperIndex] = useState(0);
     const [businessType, setBusinessType] = useState<SelectProps.Option>({ label: "Select", value: "0" });
     const [isLoading, setIsLoading] = useState(false);
-
-    const handleSubmit = (e: any) => {
-        e.preventDefault();
-    };
 
     const withLoading = (action: () => void) => {
         setIsLoading(true);
@@ -78,7 +75,7 @@ export default function SignupPage() {
             <Box textAlign="center" padding={{ vertical: "l" }}>
                 <Box display="inline-block" textAlign="left" className="maxWith-640">
                     <Container className="signupFormContainer">
-                        <form onSubmit={handleSubmit}>
+                        <form>
                             <Form
                                 header={
                                     <span className="signupTitle">
