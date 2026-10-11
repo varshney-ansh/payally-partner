@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import localFont from 'next/font/local'
-import "./globals.css";
+import "@cloudscape-design/global-styles/index.css"
+import "./payally-theme.css"
+import "./globals.css"
+
+import TopNavigation from "@cloudscape-design/components/top-navigation";
+import { Box, SpaceBetween } from "@cloudscape-design/components";
 
 const googleSansFlex = localFont({
   src: '../../public/fonts/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf', // Adjust path to your font file
