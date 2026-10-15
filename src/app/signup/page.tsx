@@ -1,16 +1,24 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client"
+import { Amplify } from "aws-amplify";
+import { confirmSignUp, resendSignUpCode, signUp } from "aws-amplify/auth";
 import { Box, Button, ButtonDropdown, Container, Divider, ExpandableSection, Flashbar, FlashbarProps, Form, FormField, Header, Icon, Input, InputProps, Link, Select, SelectProps, SpaceBetween, StatusIndicator } from "@cloudscape-design/components";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Controller, FieldPath, FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useRef, useState } from "react";
 import { z } from "zod";
+import outputs from "../../../amplify_outputs.json";
+
+Amplify.configure(outputs);
 
 const signupSchema = z.object({
     email: z.string().trim().email("Enter a valid email address."),
     fullName: z.string().trim().min(1, "Enter your full name."),
-    password: z.string().min(8, "Use at least 8 characters."),
+    password: z.string().regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
+        "Use at least 8 characters with uppercase and lowercase letters, a number, and a symbol.",
+    ),
     businessType: z.string().min(1, "Select a business type."),
     emailAuthCode: z.string().regex(/^\d{6}$/, "Enter the 6-digit verification code."),
 });
@@ -26,6 +34,23 @@ const businessTypeOptions = [
     { label: "Non-Profit Organization", value: "NON_PROFIT" },
     { label: "Government Entity", value: "GOVERNMENT" },
 ] satisfies SelectProps.Options;
+
+const authErrorMessages: Record<string, string> = {
+    CodeMismatchException: "That verification code is incorrect. Check the code and try again.",
+    ExpiredCodeException: "That verification code has expired. Request a new code and try again.",
+    LimitExceededException: "Too many attempts. Wait a while before trying again.",
+    NotAuthorizedException: "This account cannot be confirmed. Try signing in or request a new code.",
+    UsernameExistsException: "An account with this email already exists. Try signing in instead.",
+    UserNotFoundException: "No pending signup was found for this email. Start signup again.",
+    UserNotConfirmedException: "This account has not been confirmed yet. Complete email verification first.",
+};
+
+function getAuthErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return authErrorMessages[error.name] ?? (error.message || "Authentication failed. Please try again.");
+    }
+    return "An unexpected authentication error occurred. Please try again.";
+}
 
 function TextField({
     name,
@@ -79,7 +104,6 @@ function PayPalIcon() {
 
 export default function SignupPage() {
     const router = useRouter();
-    const [isConnected, setIsConnected] = useState(false);
     const [stepperIndex, setStepperIndex] = useState<SignupStep>(0);
     const [isLoading, setIsLoading] = useState(false);
     const [flashMessage, setFlashMessage] = useState<FlashbarProps.MessageDefinition | null>(null);
@@ -95,7 +119,7 @@ export default function SignupPage() {
             emailAuthCode: "",
         },
     });
-    const { control, handleSubmit, trigger, watch, formState: { errors } } = methods;
+    const { control, setError, trigger, watch, formState: { errors } } = methods;
     const email = watch("email");
 
     const withLoading = async (action: () => void | Promise<void>) => {
@@ -113,7 +137,7 @@ export default function SignupPage() {
         }
     };
 
-    const showFlashMessage = (type: "error" | "success", content: string) => {
+    const showFlashMessage = (type: "error" | "info" | "success", content: string) => {
         setFlashMessage({
             type,
             content,
@@ -129,33 +153,95 @@ export default function SignupPage() {
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
         setFlashMessage(null);
         setStepperIndex(nextStep);
     });
 
-    const togglePayPalConnection = () => withLoading(async () => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsConnected(connected => !connected);
+    const createAccount = () => withLoading(async () => {
+        if (!(await trigger(["fullName", "password", "businessType"]))) {
+            showFlashMessage("error", "Please fix the highlighted fields before continuing.");
+            return;
+        }
+
+        const values = methods.getValues();
+        setFlashMessage(null);
+
+        try {
+            const result = await signUp({
+                username: values.email.trim(),
+                password: values.password,
+                options: {
+                    userAttributes: {
+                        email: values.email.trim(),
+                        name: values.fullName.trim(),
+                        "custom:businessType": values.businessType,
+                    },
+                },
+            });
+
+            if (result.nextStep.signUpStep === "CONFIRM_SIGN_UP") {
+                setStepperIndex(2);
+                setFlashMessage(null);
+                return;
+            }
+
+            if (result.isSignUpComplete) {
+                setStepperIndex(3);
+                showFlashMessage("success", "Your account has been created.");
+                return;
+            }
+
+            showFlashMessage("error", "Signup could not continue. Please try again.");
+        } catch (error) {
+            showFlashMessage("error", getAuthErrorMessage(error));
+        }
     });
 
-    const submitForm = () => withLoading(async () => {
-        await handleSubmit(
-            async () => {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                showFlashMessage("success", "Your signup form has been completed successfully.");
-            },
-            () => showFlashMessage("error", "Please fix the highlighted fields before continuing."),
-        )();
+    const confirmEmail = () => withLoading(async () => {
+        if (!(await trigger("emailAuthCode"))) {
+            showFlashMessage("error", "Enter the 6-digit verification code.");
+            return;
+        }
+
+        const username = methods.getValues("email").trim();
+        const confirmationCode = methods.getValues("emailAuthCode").trim();
+        setFlashMessage(null);
+
+        try {
+            const result = await confirmSignUp({ username, confirmationCode });
+            if (!result.isSignUpComplete) {
+                showFlashMessage("error", "Email confirmation is not complete. Please follow the next signup step.");
+                return;
+            }
+
+            setStepperIndex(3);
+            showFlashMessage("success", "Your email is verified. Your account is ready.");
+        } catch (error) {
+            const message = getAuthErrorMessage(error);
+            if (error instanceof Error && ["CodeMismatchException", "ExpiredCodeException"].includes(error.name)) {
+                setError("emailAuthCode", { type: "server", message });
+            }
+            showFlashMessage("error", message);
+        }
     });
 
-    const handleSocialSignup = () => {
-        showFlashMessage("error", "PayPal sign-in is not available yet.");
-    };
+    const resendCode = () => withLoading(async () => {
+        setFlashMessage(null);
+        try {
+            await resendSignUpCode({ username: methods.getValues("email").trim() });
+            showFlashMessage("success", "A new verification code has been sent.");
+        } catch (error) {
+            showFlashMessage("error", getAuthErrorMessage(error));
+        }
+    });
 
     const handleChangeEmail = () => {
         setFlashMessage(null);
         setStepperIndex(0);
+    };
+
+    const handleSocialSignup = () => {
+        showFlashMessage("info", "PayPal login will be available when OAuth is configured.");
     };
 
     const handleSignin = () => {
@@ -244,20 +330,17 @@ export default function SignupPage() {
                                                 </Button>
                                             </SpaceBetween>
 
-                                            {/* OR Separator */}
                                             <Divider>OR</Divider>
 
-                                            {/* Social / Alternate Signup Buttons */}
                                             <SpaceBetween size="xs">
                                                 <Button
                                                     variant="normal"
                                                     fullWidth
-                                                    loading={isLoading}
                                                     disabled={isLoading}
                                                     iconSvg={<PayPalIcon />}
                                                     onClick={handleSocialSignup}
                                                 >
-                                                    Login with Paypal
+                                                    Login with PayPal
                                                 </Button>
                                             </SpaceBetween>
                                         </Box>
@@ -286,7 +369,7 @@ export default function SignupPage() {
                                                 label="Password"
                                                 type="password"
                                                 autoComplete="new-password"
-                                                hint="Use at least 8 characters."
+                                                hint="At least 8 characters, including uppercase and lowercase letters, a number, and a symbol."
                                                 controlId="password"
                                             />
                                             <FormField label="Business Type" errorText={errors.businessType?.message}>
@@ -309,7 +392,7 @@ export default function SignupPage() {
                                                 data-testid="continue-email-button"
                                                 formAction="none"
                                                 loading={isLoading}
-                                                onClick={() => void continueToStep(["fullName", "password", "businessType"], 2)}
+                                                onClick={() => void createAccount()}
                                             >
                                                 Continue
                                             </Button>
@@ -380,10 +463,12 @@ export default function SignupPage() {
                                                                 <div style={{ minWidth: "156px" }}>
                                                                     <Button
                                                                         fullWidth
-                                                                        disabled
+                                                                        disabled={isLoading}
+                                                                        loading={isLoading}
                                                                         data-testid="email-verification-resend-code-button"
+                                                                        onClick={() => void resendCode()}
                                                                     >
-                                                                        Resend code <span>2s</span>
+                                                                        Resend code
                                                                     </Button>
                                                                 </div>
                                                             </div>
@@ -397,7 +482,7 @@ export default function SignupPage() {
                                                         data-testid="continue-email-button"
                                                         formAction="none"
                                                         loading={isLoading}
-                                                        onClick={() => void continueToStep(["emailAuthCode"], 3)}
+                                                        onClick={() => void confirmEmail()}
                                                     >
                                                         Continue
                                                     </Button>
@@ -407,61 +492,24 @@ export default function SignupPage() {
                                     )}
                                     {stepperIndex === 3 && (
                                         <Box>
-                                            {/* Header and Description */}
                                             <Header
                                                 variant="h1"
-                                                description="We need to connect your PayPal Business Account to start accepting payments. If you don't have a PayPal Business Account, you can create one during this step."
+                                                description="Your email address has been confirmed and your account is ready."
                                             >
-                                                Connect your PayPal Business Account
+                                                Signup complete
                                             </Header>
-
-                                            {/* Email Display Field */}
-
-                                            <SpaceBetween size="l">
-                                                {/* Email Input Section */}
-                                                <SpaceBetween size="s">
-                                                    <SpaceBetween size="l">
-                                                        <Box padding="s" variant="div">
-                                                            <SpaceBetween direction="horizontal" size="l" alignItems="center">
-                                                                {/* PayPal Branding / Info */}
-                                                                <SpaceBetween size="xxs">
-                                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                                        <span style={{ fontWeight: "bold", fontSize: "16px" }}>PayPal</span>
-                                                                        {isConnected && <StatusIndicator type="success">Connected</StatusIndicator>}
-                                                                    </div>
-                                                                    <Box variant="p" color="text-body-secondary">
-                                                                        {isConnected
-                                                                            ? `Connected as ${email}`
-                                                                            : "No PayPal account linked yet."}
-                                                                    </Box>
-                                                                </SpaceBetween>
-
-                                                                {/* Action Button */}
-                                                                <Button
-                                                                    variant="normal"
-                                                                    loading={isLoading}
-                                                                    disabled={isLoading}
-                                                                    onClick={() => void togglePayPalConnection()}
-                                                                    iconSvg={<PayPalIcon />}
-                                                                >
-                                                                    {isConnected ? "Disconnect" : "Connect PayPal"}
-                                                                </Button>
-                                                            </SpaceBetween>
-                                                        </Box>
-                                                    </SpaceBetween>
-
-                                                    <Button
-                                                        variant="primary"
-                                                        fullWidth
-                                                        data-testid="continue-email-button"
-                                                        formAction="none"
-                                                        loading={isLoading}
-                                                        onClick={submitForm}
-                                                        disabled={!isConnected || isLoading}
-                                                    >
-                                                        Continue
-                                                    </Button>
-                                                </SpaceBetween>
+                                            <SpaceBetween size="m">
+                                                <StatusIndicator type="success">Email verified</StatusIndicator>
+                                                <Box variant="p">
+                                                    Sign in to continue. You can connect your PayPal account after the OAuth integration is configured.
+                                                </Box>
+                                                <Button
+                                                    variant="primary"
+                                                    fullWidth
+                                                    onClick={handleSignin}
+                                                >
+                                                    Sign in
+                                                </Button>
                                             </SpaceBetween>
                                         </Box>
                                     )}
@@ -469,15 +517,7 @@ export default function SignupPage() {
                                     {/* Legal / Terms Text */}
                                     <Box fontSize="body-m" color="text-body-secondary">
                                         By continuing and signing up to Payally Partner, you agree to the{" "}
-                                        <Link external href="#">Payally Customer Agreement</Link>
-                                        , and you authorize Payally to link with your PayPal account in accordance with the{" "}
-                                        <Link external href="https://www.paypal.com/us/legalhub/paypal/useragreement-full">
-                                            PayPal User Agreement
-                                        </Link>{" "}
-                                        and{" "}
-                                        <Link external href="https://www.paypal.com/us/legalhub/paypal/privacy-full">
-                                            PayPal Privacy Statement
-                                        </Link>.
+                                        <Link external href="#">Payally Customer Agreement</Link>.
                                     </Box>
 
                                     <Divider />
@@ -491,17 +531,16 @@ export default function SignupPage() {
 
                                     <Divider />
 
-                                    {/* Advanced Signup Option */}
                                     <ExpandableSection
-                                        headerText="What do I need before signing up?"
+                                        headerText="What do I need before connecting PayPal?"
                                         defaultExpanded
                                     >
                                         <SpaceBetween size="s">
                                             <Box>
-                                                <strong>Existing PayPal Merchants:</strong> Log in with your current PayPal business credentials during the next step to instantly grant API permissions to Payally.
+                                                <strong>Existing PayPal Merchants:</strong> You can authorize your account after PayPal OAuth is configured.
                                             </Box>
                                             <Box>
-                                                <strong>New to PayPal?</strong> You can open a new PayPal Business Account right inside our signup flow. Make sure your business registration and bank details are handy for quick verification.
+                                                <strong>New to PayPal?</strong> You can create a PayPal Business Account separately, then connect it after the integration is available.
                                             </Box>
                                             <Link external href="https://paypal.com">
                                                 You can also signup on paypal and get verified
