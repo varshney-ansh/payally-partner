@@ -4,8 +4,6 @@ import "@cloudscape-design/global-styles/index.css"
 import "./payally-theme.css"
 import "./globals.css"
 
-import TopNavigation from "@cloudscape-design/components/top-navigation";
-import { Box, SpaceBetween } from "@cloudscape-design/components";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 

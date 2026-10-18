@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, SpaceBetween } from "@cloudscape-design/components";
+import { SpaceBetween } from "@cloudscape-design/components";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 
