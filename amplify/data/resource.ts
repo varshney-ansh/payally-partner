@@ -2,11 +2,68 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { PayPalPlatformAccessTokenFunction } from '../functions/paypal-platform-access-token/resource';
 import { PayPalMerchantAccessTokenFunction } from '../functions/paypal-merchant-onboard-token/resource';
 import { PayPalRetrieveRestCredentialsFunction } from '../functions/paypal-retrieve-rest-credentials/resource';
+import { getPayPalAuthJWT } from '../functions/generate-paypal-auth-jwt/resource'
+
 const schema = a.schema({
+  StoreMerchantPaypalCredentials: a.model({
+    id: a.id(),
+    clientId: a.string(),
+    clientSecret: a.string(),
+    payer_id: a.string(),
+  })
+    .authorization(allow => [allow.guest()]),
+
+  PayPalCapability: a.customType({
+    name: a.string().required(),
+    status: a.string(),
+  }),
+
+  PayPalProduct: a.customType({
+    name: a.string().required(),
+    status: a.string(),
+    vettingStatus: a.string(),
+    capabilities: a.ref('PayPalCapability').array(),
+  }),
+
+
+  PayPalOAuthThirdParty: a.customType({
+    partnerClientId: a.string(),
+    merchantClientId: a.string(),
+    scopes: a.string().array(),
+  }),
+
+  PayPalOAuthIntegration: a.customType({
+    integrationType: a.string(),
+    integrationMethod: a.string(),
+    oauthThirdParty: a.ref('PayPalOAuthThirdParty').array(),
+  }),
+
+  MerchantPaypalOAuth: a.model({
+    id: a.id(),
+    trackingId: a.string(),
+    products: a.ref('PayPalProduct').array(),
+    capabilities: a.ref('PayPalCapability').array(),
+    paymentsReceivable: a.boolean(),
+    legalName: a.string(),
+    primaryEmailConfirmed: a.boolean(),
+    OAuth: a.ref('PayPalOAuthIntegration').array(),
+  })
+    .authorization(allow => [allow.guest()]),
+
+  StoreMerchantInfo: a.model({
+    id: a.id(),
+    merchantId: a.email(),
+    merchantIdInPayPal: a.string(),
+    permissionsGranted: a.boolean(),
+    accountStatus: a.string(),
+    consentStatus: a.string(),
+    isEmailConfirmed: a.boolean(),
+  })
+    .authorization(allow => [allow.guest()]),
 
   PayPalPlatformAccessTokenResponse: a.customType({
     scope: a.string(),
-    accessToken: a.string(), 
+    accessToken: a.string(),
     tokenType: a.string(),
     appId: a.string(),
     expiresIn: a.integer(),
@@ -19,6 +76,10 @@ const schema = a.schema({
     payer_id: a.string(),
   }),
 
+  PayPalAuthJWTResponse: a.customType({
+    jwt: a.string(),
+  }),
+
   PayPalPlatformAccessTokenFunction: a
     .query()
     .returns(a.ref('PayPalPlatformAccessTokenResponse'))
@@ -27,17 +88,24 @@ const schema = a.schema({
 
   PayPalMerchantAccessTokenFunction: a
     .query()
-    .arguments({authCode: a.string(), sharedId: a.string(), sellerToken: a.string()})
+    .arguments({ authCode: a.string(), sharedId: a.string(), sellerToken: a.string() })
     .returns(a.ref('PayPalPlatformAccessTokenResponse'))
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(PayPalMerchantAccessTokenFunction)),
 
   PayPalRetrieveRestCredentialsFunction: a
     .query()
-    .arguments({accessToken: a.string()})
+    .arguments({ accessToken: a.string() })
     .returns(a.ref('PayPalSellerRestApiCredentialsResponse'))
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(PayPalRetrieveRestCredentialsFunction)),
+
+  getPayPalAuthJWT: a
+    .query()
+    .arguments({ sellerId: a.string() })
+    .returns(a.ref('PayPalAuthJWTResponse'))
+    .authorization(allow => [allow.guest()])
+    .handler(a.handler.function(getPayPalAuthJWT)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

@@ -1,13 +1,19 @@
+import { merchantOnboardingStatus } from "@/serverActions/paypal";
+import { redirect } from "next/navigation";
+
 type Props = {
   params: Promise<{ payeeId: string }>;
 };
 
 export default async function AuthorizePaymentsPage({ params }: Props) {
   const { payeeId } = await params;
+  const merchantOnboardingResponse = await merchantOnboardingStatus({merchantId: payeeId});
+  if(merchantOnboardingResponse.payments_receivable == true){
+     redirect('/dashboard');
+  }
     return (
         <div>
-            <h1>Authorize Payments for Payee ID: {payeeId}</h1>
-            <p>Please authorize payments for the payee by clicking the button below.</p>
+            <p>Authorization page</p>
         </div>
     );
 }
