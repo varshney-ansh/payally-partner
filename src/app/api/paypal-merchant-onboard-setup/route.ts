@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
     }
 
     // redirect user to /authorize-payments/[payeeId] page with the query parameters
-    const redirectUrl = new URL(`/authorize-payments/${merchantIdInPayPal}`, request.url);
-    return Response.redirect(redirectUrl);
+    return Response.redirect(`/authorize-payments/${merchantIdInPayPal}`);
 }
 
