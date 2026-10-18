@@ -10,7 +10,7 @@ const client = generateClient<Schema>()
 
 export async function GET(request: NextRequest) {
     const merchantIdInPayPal = request.nextUrl.searchParams.get('merchantIdInPayPal');
-     const merchantId = request.nextUrl.searchParams.get('merchantId');
+    const merchantId = request.nextUrl.searchParams.get('merchantId');
     if (!merchantIdInPayPal || !merchantId) {
         return new Response(JSON.stringify({ error: "Missing required query parameters" }), { status: 400 });
     }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const accountStatus = request.nextUrl.searchParams.get('accountStatus');
     const consentStatus = request.nextUrl.searchParams.get('consentStatus');
     const isEmailConfirmed = request.nextUrl.searchParams.get('isEmailConfirmed');
-    
+
     const merchantInfo = {
         merchantId,
         merchantIdInPayPal,
@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
         throw new Error(`Failed to save merchant info: ${saved.errors.map(({ message }) => message).join(", ")}`);
     }
 
-    // redirect user to /authorize-payments/[payeeId] page with the query parameters
-    return Response.redirect(`${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize-payments/${merchantIdInPayPal}`);
+    const redirectUrl = new URL(`/authorize-payments/${merchantIdInPayPal}`, process.env.PAYALLY_PLATFORM_BASE_URL);
+    return Response.redirect(redirectUrl.toString());
+
 }
 
