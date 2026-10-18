@@ -39,6 +39,6 @@ export async function GET(request: NextRequest) {
     }
 
     // redirect user to /authorize-payments/[payeeId] page with the query parameters
-    return Response.redirect(`/authorize-payments/${merchantIdInPayPal}`);
+    return Response.redirect(`${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize-payments/${merchantIdInPayPal}`);
 }
 

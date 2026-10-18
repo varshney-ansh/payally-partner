@@ -62,13 +62,12 @@ export const fetchPaypalReferalLink = async ({ accessToken }: { accessToken: str
                         "api_integration_preference": {
                             "rest_api_integration": {
                                 "integration_method": "PAYPAL",
-                                "integration_type": "FIRST_PARTY",
-                                "first_party_details": {
+                                "integration_type": "THIRD_PARTY",
+                                "third_party_details": {
                                     "features": [
                                         "PAYMENT",
                                         "REFUND"
-                                    ],
-                                    "seller_nonce": sellerNonce
+                                    ]
                                 }
                             }
                         }
@@ -189,6 +188,7 @@ function validPayPalProducts(value: unknown): PayPalProduct[] | undefined {
 export const merchantOnboardingStatus = async ({ merchantId }: { merchantId: string }) => {
     try {
         const jwtToken = (await client.queries.getPayPalAuthJWT({ sellerId: `${process.env.PAYALLY_PARTNER_MERCHANT_ID}` })).data?.jwt;
+        console.log(jwtToken)
         if (!jwtToken) {
             throw new Error(`JWT Token Failed : ${jwtToken}`);
         }
@@ -242,7 +242,7 @@ export const merchantOnboardingStatus = async ({ merchantId }: { merchantId: str
         if (dataStore.errors?.length) {
             throw new Error(`Failed to save merchant status: ${dataStore.errors.map(({ message }) => message).join(", ")}`);
         }
-       
+
         return data;
     } catch (error) {
         throw new Error(`Failed to merchant onboarding status: ${error}`);
