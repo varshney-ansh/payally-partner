@@ -1,5 +1,5 @@
-import { merchantOnboardingStatus } from "@/serverActions/paypal";
-import { redirect } from "next/navigation";
+import { getMerchantSignupDetails } from "@/serverActions/paypal";
+import AuthorizeSignupForm from "./authorize-signup-form";
 
 type Props = {
   params: Promise<{ payeeId: string }>;
@@ -7,13 +7,19 @@ type Props = {
 
 export default async function AuthorizePaymentsPage({ params }: Props) {
   const { payeeId } = await params;
-  const merchantOnboardingResponse = await merchantOnboardingStatus({merchantId: payeeId});
-  if(merchantOnboardingResponse.payments_receivable == true){
-     redirect('/dashboard');
-  }
+  const signupDetails = await getMerchantSignupDetails({ paypalMerchantId: payeeId });
+
+  if (!signupDetails) {
     return (
-        <div>
-            <p>Authorization page</p>
-        </div>
+      <main>
+        <h1>Unable to start signup</h1>
+        <p>
+          We couldn&apos;t find the email address associated with this PayPal
+          onboarding. Please start the PayPal signup process again.
+        </p>
+      </main>
     );
+  }
+
+  return <AuthorizeSignupForm {...signupDetails} />;
 }

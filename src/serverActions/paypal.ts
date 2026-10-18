@@ -248,3 +248,24 @@ export const merchantOnboardingStatus = async ({ merchantId }: { merchantId: str
         throw new Error(`Failed to merchant onboarding status: ${error}`);
     }
 }
+
+export const getMerchantSignupDetails = async ({ paypalMerchantId }: { paypalMerchantId: string }) => {
+    try {
+        const result = await client.models.StoreMerchantInfo.get({ id: paypalMerchantId });
+        if (result.errors?.length) {
+            throw new Error(`Failed to look up signup details: ${result.errors.map(({ message }) => message).join(", ")}`);
+        }
+
+        const merchantInfo = result.data;
+        if (!merchantInfo?.merchantId) {
+            return null;
+        }
+
+        return {
+            email: merchantInfo.merchantId,
+            paypalMerchantId: merchantInfo.merchantIdInPayPal ?? paypalMerchantId,
+        };
+    } catch (error) {
+        throw new Error(`Failed to load merchant signup details: ${error}`);
+    }
+}

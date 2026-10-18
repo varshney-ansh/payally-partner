@@ -14,10 +14,19 @@
   border-radius: 0px !important;
   padding-top: 20px !important;
 }
+.paddingTop-20{
+  margin-top: 20px !important;
+}
 .signupTitle {
   font-weight: 700;
   font-size: 64px !important;
   padding: 10px 0px;
+}
+.minWidth-340{
+  min-width: 340px !important;
+}
+.span-font-size-xxx span{
+  font-size: 38px !important;
 }
 
 /* For smaller screens (e.g., tablets and mobile phones under 768px) */

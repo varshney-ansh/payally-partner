@@ -13,5 +13,9 @@ export const auth = defineAuth({
       dataType: 'String',
       mutable: true,
     },
+    'custom:custom:paypalMerchId': {
+      dataType: 'String',
+      mutable: true,
+    },
   },
 });
