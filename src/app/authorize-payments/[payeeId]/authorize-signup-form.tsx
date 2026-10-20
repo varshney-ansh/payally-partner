@@ -1,7 +1,7 @@
 "use client";
 
 import { Amplify } from "aws-amplify";
-import { confirmSignUp, resendSignUpCode, signIn, signUp } from "aws-amplify/auth";
+import { confirmSignIn, confirmSignUp, resendSignUpCode, signIn, signUp } from "aws-amplify/auth";
 import {
     Box,
     Button,
@@ -21,14 +21,14 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import outputs from "../../../../amplify_outputs.json";
 
-Amplify.configure(outputs);
+Amplify.configure(outputs, { ssr: true });
 
 type Props = {
     email: string;
     paypalMerchantId: string;
 };
 
-type SignupStage = "account" | "verification";
+type SignupStage = "account" | "verification" | "mfa";
 
 const businessTypeOptions = [
     { label: "Individual / Sole Proprietorship", value: "INDIVIDUAL" },
@@ -62,6 +62,7 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
     const [password, setPassword] = useState("");
     const [businessType, setBusinessType] = useState("");
     const [verificationCode, setVerificationCode] = useState("");
+    const [mfaCode, setMfaCode] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [flashMessage, setFlashMessage] = useState<FlashbarProps.MessageDefinition | null>(null);
     const loadingRef = useRef(false);
@@ -91,14 +92,20 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
 
     const signInAndRedirect = async () => {
         const result = await signIn({ username: email, password });
-        if (!result.isSignedIn) {
-            showMessage("success", "Your account is verified. Please sign in to continue.");
-            router.replace("/signin");
+        if (result.isSignedIn) {
+            router.replace("/dashboard");
+            router.refresh();
             return;
         }
 
-        router.replace("/dashboard");
-        router.refresh();
+        if (result.nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_EMAIL_CODE") {
+            setStage("mfa");
+            setMfaCode("");
+            showMessage("info", `Your email is verified. A sign-in verification code was sent to ${email}.`);
+            return;
+        }
+
+        throw new Error("Your account was created, but sign-in requires an unsupported verification step. Please contact support.");
     };
 
     const createAccount = () => withLoading(async () => {
@@ -176,6 +183,53 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
         try {
             await resendSignUpCode({ username: email });
             showMessage("success", `A new verification code was sent to ${email}.`);
+        } catch (error) {
+            showMessage("error", getAuthErrorMessage(error));
+        }
+    });
+
+    const confirmMfa = () => withLoading(async () => {
+        if (!/^\d{6}$/.test(mfaCode.trim())) {
+            showMessage("error", "Enter the 6-digit sign-in verification code.");
+            return;
+        }
+
+        setFlashMessage(null);
+        try {
+            const result = await confirmSignIn({ challengeResponse: mfaCode.trim() });
+            if (result.isSignedIn) {
+                router.replace("/dashboard");
+                router.refresh();
+                return;
+            }
+
+            if (result.nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_EMAIL_CODE") {
+                showMessage("error", "The sign-in verification is not complete. Enter the latest code and try again.");
+                return;
+            }
+
+            throw new Error("Your account requires another sign-in step. Please contact support.");
+        } catch (error) {
+            showMessage("error", getAuthErrorMessage(error));
+        }
+    });
+
+    const resendMfaCode = () => withLoading(async () => {
+        setFlashMessage(null);
+        try {
+            const result = await signIn({ username: email, password });
+            if (result.isSignedIn) {
+                router.replace("/dashboard");
+                router.refresh();
+                return;
+            }
+
+            if (result.nextStep.signInStep !== "CONFIRM_SIGN_IN_WITH_EMAIL_CODE") {
+                throw new Error("Could not resend the sign-in verification code. Please try signing in again.");
+            }
+
+            setMfaCode("");
+            showMessage("success", `A new sign-in verification code was sent to ${email}.`);
         } catch (error) {
             showMessage("error", getAuthErrorMessage(error));
         }
@@ -261,7 +315,7 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
                                     </Button>
                                 </SpaceBetween>
                             </form>
-                        ) : (
+                        ) : stage === "verification" ? (
                             <form
                                 onSubmit={(event) => {
                                     event.preventDefault();
@@ -285,6 +339,34 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
                                     </Button>
                                     <Button variant="link" onClick={() => void resendCode()} loading={isLoading}>
                                         Resend code
+                                    </Button>
+                                </SpaceBetween>
+                            </form>
+                        ) : (
+                            <form
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    void confirmMfa();
+                                }}
+                            >
+                                <SpaceBetween size="m">
+                                    <Box>
+                                        Your email is verified. Enter the sign-in verification code sent to{" "}
+                                        <strong>{email}</strong>.
+                                    </Box>
+                                    <FormField label="Sign-in verification code">
+                                        <Input
+                                            value={mfaCode}
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            onChange={({ detail }) => setMfaCode(detail.value.replace(/\D/g, "").slice(0, 6))}
+                                        />
+                                    </FormField>
+                                    <Button variant="primary" fullWidth loading={isLoading}>
+                                        Verify and continue
+                                    </Button>
+                                    <Button variant="link" onClick={() => void resendMfaCode()} loading={isLoading}>
+                                        Resend sign-in code
                                     </Button>
                                 </SpaceBetween>
                             </form>

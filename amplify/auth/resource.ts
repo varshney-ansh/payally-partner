@@ -8,6 +8,10 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
+  multifactor: {
+    mode: 'REQUIRED',
+    email: true,
+  },
   userAttributes: {
     'custom:businessType': {
       dataType: 'String',
@@ -16,6 +20,14 @@ export const auth = defineAuth({
     'custom:custom:paypalMerchId': {
       dataType: 'String',
       mutable: true,
+    },
+  },
+  accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
+  senders: {
+    email: {
+      fromEmail: "no-reply@payally.world",
+      fromName: "Payally Partner",
+      replyTo: "inquiries@payally.world"
     },
   },
 });
