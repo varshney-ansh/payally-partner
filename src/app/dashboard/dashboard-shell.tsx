@@ -10,12 +10,19 @@ import {
 import { I18nProvider } from "@cloudscape-design/components/i18n";
 import messages from "@cloudscape-design/components/i18n/messages/all.en";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [mounted, setMounted] = useState(false);
     const [navigationOpen, setNavigationOpen] = useState(true);
     const [toolsOpen, setToolsOpen] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
 
     return (
         <I18nProvider locale="en" messages={[messages]}>
@@ -23,10 +30,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 breadcrumbs={
                     <Box padding={{ vertical: "s" }}>
                         <SpaceBetween direction="horizontal" size="xxxs">
-                            <Box variant="h3" padding="n" fontWeight="bold" fontSize="heading-l">
+                            <Box key="payally-brand" variant="h3" padding="n" fontWeight="bold" fontSize="heading-l">
                                 Payally
                             </Box>
-                            <Box variant="h3" padding="n" fontWeight="normal" fontSize="heading-l">
+                            <Box key="partner-brand" variant="h3" padding="n" fontWeight="normal" fontSize="heading-l">
                                 Partner
                             </Box>
                         </SpaceBetween>

@@ -126,10 +126,10 @@ export default function SettingsPage() {
 
     return (
         <SpaceBetween size="l">
-            <Header variant="h1">Settings</Header>
-            {error && <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>}
-            {notice && <Alert type="success" dismissible onDismiss={() => setNotice("")}>{notice}</Alert>}
-            <Container header={<Header variant="h2">Channel3 connection</Header>}>
+            <Header key="settings-header" variant="h1">Settings</Header>
+            {error && <Alert key="settings-error" type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>}
+            {notice && <Alert key="settings-notice" type="success" dismissible onDismiss={() => setNotice("")}>{notice}</Alert>}
+            <Container key="channel3-connection" header={<Header variant="h2">Channel3 connection</Header>}>
                 <Form
                     actions={
                         <Button variant="primary" onClick={saveApiKey} loading={savingKey} disabled={loading}>
@@ -139,6 +139,7 @@ export default function SettingsPage() {
                 >
                     <SpaceBetween size="m">
                         <FormField
+                            key="channel3-api-key"
                             label="Channel3 API key"
                             description="Enter a merchant Channel3 key to save or replace the existing key. This key is stored for other merchant-specific operations."
                         >
@@ -150,16 +151,17 @@ export default function SettingsPage() {
                                 autoComplete="new-password"
                             />
                         </FormField>
-                        <Alert type="info">
+                        <Alert key="channel3-api-info" type="info">
                             Find or create your merchant API key in your Channel3 account&apos;s developer/API settings. Brand
                             search and catalog requests use the platform Channel3 key configured on the server.
                         </Alert>
                     </SpaceBetween>
                 </Form>
             </Container>
-            <Container header={<Header variant="h2">Product brand</Header>}>
+            <Container key="channel3-brand" header={<Header variant="h2">Product brand</Header>}>
                 <SpaceBetween size="m">
                     <FormField
+                        key="channel3-brand-select"
                         label="Channel3 brand"
                         description="Search by brand name, then save the brand whose products should appear in Products."
                     >
@@ -178,7 +180,7 @@ export default function SettingsPage() {
                             onChange={({ detail }) => setSelectedBrand(detail.selectedOption)}
                         />
                     </FormField>
-                    <div>
+                    <div key="channel3-brand-save">
                         <Button
                             variant="primary"
                             onClick={saveBrand}
