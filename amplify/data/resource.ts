@@ -13,6 +13,17 @@ const schema = a.schema({
   })
     .authorization(allow => [allow.guest()]),
 
+  StoreMerchantSettings: a.model({
+    id: a.id(),
+    paypalMerchantId: a.string(),
+    channel3brand: a.string(),
+    channel3ApiKey: a.string(),
+  })
+    .authorization(allow => [
+      allow.guest().to(["read"]),
+      allow.owner().to(["create", "update", "delete", "read"]),
+    ]),
+
   PayPalCapability: a.customType({
     name: a.string().required(),
     status: a.string(),
