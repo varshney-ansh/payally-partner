@@ -66,7 +66,8 @@ export const fetchPaypalReferalLink = async ({ accessToken }: { accessToken: str
                                 "third_party_details": {
                                     "features": [
                                         "PAYMENT",
-                                        "REFUND"
+                                        "REFUND",
+                                        "PARTNER_FEE",
                                     ]
                                 }
                             }
