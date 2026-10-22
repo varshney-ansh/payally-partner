@@ -18,6 +18,9 @@ const schema = a.schema({
     paypalMerchantId: a.string(),
     channel3brand: a.string(),
     channel3ApiKey: a.string(),
+    storeProvider: a.string(),
+    shopifyConnectionId: a.string(),
+    shopifyShop: a.string(),
   })
     .authorization(allow => [
       allow.guest().to(["read"]),

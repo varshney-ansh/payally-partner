@@ -13,7 +13,8 @@ import {
     SpaceBetween,
 } from "@cloudscape-design/components";
 import { getChannel3Product } from "@/serverActions/channel3";
-import { loadChannel3Settings } from "@/lib/channel3-settings";
+import { getShopifyProduct } from "@/serverActions/shopify";
+import { loadStoreSettings } from "@/lib/store-connect-settings";
 
 type Product = Awaited<ReturnType<typeof getChannel3Product>>;
 
@@ -29,12 +30,20 @@ export default function ProductDetailPage() {
         setIsLoaded(false);
         setProduct(null);
         setError("");
-        loadChannel3Settings()
-            .then((settings) => {
-                if (!settings.brandId) {
-                    throw new Error("Select a Channel3 brand in Settings to view products.");
+
+        const productId = decodeURIComponent(params.productid);
+
+        loadStoreSettings()
+            .then(async (settings) => {
+                if (!settings.storeProvider) {
+                    throw new Error("No store connected. Go to Store Connect to set up your connection.");
                 }
-                return getChannel3Product(params.productid, settings.brandId);
+                if (settings.storeProvider === "channel3") {
+                    if (!settings.channel3brand) throw new Error("No Channel3 brand configured.");
+                    return getChannel3Product(productId, settings.channel3brand);
+                }
+                if (!settings.shopifyConnectionId) throw new Error("No Shopify connection found.");
+                return getShopifyProduct(settings.shopifyConnectionId, productId);
             })
             .then((result) => {
                 if (active) setProduct(result);
@@ -47,9 +56,8 @@ export default function ProductDetailPage() {
             .finally(() => {
                 if (active) setIsLoaded(true);
             });
-        return () => {
-            active = false;
-        };
+
+        return () => { active = false; };
     }, [params.productid]);
 
     if (!isLoaded) return null;
@@ -109,25 +117,39 @@ export default function ProductDetailPage() {
                     </SpaceBetween>
                     <SpaceBetween size="s">
                         <Box variant="awsui-key-label">Product image</Box>
-                        {product.imageUrl ? <Link href={product.imageUrl} external>
-                            Open image
-                        </Link> : <Box>-</Box>}
+                        {product.imageUrl ? (
+                            <Link href={product.imageUrl} external>Open image</Link>
+                        ) : (
+                            <Box>-</Box>
+                        )}
                     </SpaceBetween>
                     <SpaceBetween size="s">
-                        <Box variant="awsui-key-label">Offers</Box>
-                        <SpaceBetween size="xs">
-                            {product.offers.length
-                                ? product.offers.map((offer) => (
-                                <Link key={offer.url} href={offer.url} external>
-                                    {offer.domain} - {new Intl.NumberFormat("en-US", {
-                                        style: "currency",
-                                        currency: offer.currency,
-                                    }).format(offer.price)}
-                                </Link>
-                                ))
-                                : <Box>No offers available.</Box>}
-                        </SpaceBetween>
+                        <Box variant="awsui-key-label">Price</Box>
+                        <Box>
+                            {product.offers[0]
+                                ? new Intl.NumberFormat("en-US", {
+                                      style: "currency",
+                                      currency: product.offers[0].currency,
+                                  }).format(product.offers[0].price)
+                                : "-"}
+                        </Box>
                     </SpaceBetween>
+                    {product.offers.length > 0 && product.offers[0].url && (
+                        <SpaceBetween size="s">
+                            <Box variant="awsui-key-label">Offers</Box>
+                            <SpaceBetween size="xs">
+                                {product.offers.map((offer) => (
+                                    <Link key={offer.url} href={offer.url} external>
+                                        {offer.domain} -{" "}
+                                        {new Intl.NumberFormat("en-US", {
+                                            style: "currency",
+                                            currency: offer.currency,
+                                        }).format(offer.price)}
+                                    </Link>
+                                ))}
+                            </SpaceBetween>
+                        </SpaceBetween>
+                    )}
                 </ColumnLayout>
             </Container>
         </SpaceBetween>

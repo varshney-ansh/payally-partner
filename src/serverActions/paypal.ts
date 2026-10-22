@@ -190,7 +190,7 @@ function validPayPalProducts(value: unknown): PayPalProduct[] | undefined {
 export const merchantOnboardingStatus = async ({ merchantId }: { merchantId: string }) => {
     try {
         const jwtToken = (await client.queries.getPayPalAuthJWT({ sellerId: `${process.env.PAYALLY_PARTNER_MERCHANT_ID}` })).data?.jwt;
-        console.log(jwtToken)
+
         if (!jwtToken) {
             throw new Error(`JWT Token Failed : ${jwtToken}`);
         }

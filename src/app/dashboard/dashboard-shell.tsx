@@ -48,6 +48,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         items={[
                             { type: "link", text: "Overview", href: "/dashboard" },
                             { type: "link", text: "Products", href: "/dashboard/products" },
+                            { type: "link", text: "Store Connect", href: "/dashboard/store-connect" },
                             { type: "link", text: "Transactions", href: "/dashboard/transactions" },
                             { type: "link", text: "MCP", href: "/dashboard/mcp" },
                             { type: "link", text: "Settings", href: "/dashboard/settings" },

@@ -15,7 +15,8 @@ import {
     TextFilter,
 } from "@cloudscape-design/components";
 import { getChannel3Products } from "@/serverActions/channel3";
-import { loadChannel3Settings } from "@/lib/channel3-settings";
+import { getShopifyProducts } from "@/serverActions/shopify";
+import { loadStoreSettings } from "@/lib/store-connect-settings";
 
 type Product = {
     id: string;
@@ -68,19 +69,25 @@ export default function ProductsPage() {
 
     useEffect(() => {
         let active = true;
-        loadChannel3Settings()
-            .then((settings) => {
-                if (!settings.brandId) {
-                    throw new Error("Select a Channel3 brand in Settings to load products.");
+        loadStoreSettings()
+            .then(async (settings) => {
+                if (!settings.storeProvider) {
+                    throw new Error("NO_PROVIDER");
                 }
-                return getChannel3Products(settings.brandId);
+                if (settings.storeProvider === "channel3") {
+                    if (!settings.channel3brand) throw new Error("No Channel3 brand configured. Go to Store Connect to set up your connection.");
+                    return getChannel3Products(settings.channel3brand);
+                }
+                // shopify
+                if (!settings.shopifyConnectionId) throw new Error("No Shopify connection found. Go to Store Connect to reconnect.");
+                return getShopifyProducts(settings.shopifyConnectionId);
             })
-            .then((channel3Products) => {
-                if (active) setProducts(channel3Products);
+            .then((fetchedProducts) => {
+                if (active) setProducts(fetchedProducts);
             })
             .catch((error: unknown) => {
                 if (active) {
-                    setLoadError(error instanceof Error ? error.message : "Unable to load Channel3 products.");
+                    setLoadError(error instanceof Error ? error.message : "Unable to load products.");
                 }
             })
             .finally(() => {
@@ -113,14 +120,15 @@ export default function ProductsPage() {
 
     return (
         <>
-            {loadError && (
+            {loadError === "NO_PROVIDER" ? (
+                <Alert type="info" header="No store connected">
+                    Connect a store to load your products.{" "}
+                </Alert>
+            ) : loadError ? (
                 <Alert type="error" header="Unable to load products">
                     {loadError}{" "}
-                    <Button variant="link" onClick={() => router.push("/dashboard/settings")}>
-                        Open Settings
-                    </Button>
                 </Alert>
-            )}
+            ) : null}
             <Table<Product>
                 renderAriaLive={({ firstIndex, lastIndex, totalItemsCount }) =>
                     `Displaying products ${firstIndex} to ${lastIndex} of ${totalItemsCount}`
@@ -179,7 +187,7 @@ export default function ProductsPage() {
                             <Box>
                                 {filteringText
                                     ? "Try a different search."
-                                    : "Products from your selected Channel3 brand will appear here."}
+                                    : "Connect a store to see products here."}
                             </Box>
                         </SpaceBetween>
                     </Box>
@@ -198,12 +206,12 @@ export default function ProductsPage() {
                 header={
                     <Header
                         variant="h1"
-                        description="Products from your selected Channel3 brand."
+                        description="Products from your connected store."
                         counter={`(${products.length})`}
                         actions={
                             <SpaceBetween direction="horizontal" size="xs">
-                                <Button onClick={() => router.push("/dashboard/settings")}>
-                                    Channel3 settings
+                                <Button onClick={() => router.push("/dashboard/store-connect")}>
+                                    Store Connect
                                 </Button>
                             </SpaceBetween>
                         }
