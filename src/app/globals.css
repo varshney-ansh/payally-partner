@@ -1,20 +1,19 @@
 @import 'tailwindcss';
-/* @import "tw-animate-css"; */
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-.awsui_title_k5dlb_1cn17_118{
+.awsui_title_k5dlb_1cn17_118 {
   font-weight: 600 !important;
 }
-.maxWith-640{
+.maxWith-640 {
   max-width: 640px !important;
 }
-.signupFormContainer{
+.signupFormContainer {
   border-radius: 0px !important;
   padding-top: 20px !important;
 }
-.paddingTop-20{
+.paddingTop-20 {
   margin-top: 20px !important;
 }
 .signupTitle {
@@ -22,23 +21,48 @@
   font-size: 64px !important;
   padding: 10px 0px;
 }
-.minWidth-340{
+.minWidth-340 {
   min-width: 340px !important;
 }
-.span-font-size-xxx span{
+.span-font-size-xxx span {
   font-size: 38px !important;
 }
 
-/* For smaller screens (e.g., tablets and mobile phones under 768px) */
 @media (max-width: 612px) {
   .signupTitle {
     font-size: 36px !important;
   }
 }
 
-@theme inline {
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+@theme {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
+  --color-paypal-blue: #003087;
+  --color-paypal-dark: #001C3D;
+  --color-paypal-light: #0070BA;
+  --color-paypal-accent: #48C6EF;
+  --color-paypal-yellow: #FFC439;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
