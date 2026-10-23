@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
 import { runWithAmplifyServerContext } from "@/utils/amplify-utils";
 import { fetchUserAttributes } from "aws-amplify/auth/server";

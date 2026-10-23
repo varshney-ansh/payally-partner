@@ -29,5 +29,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/signout/:path*"],
+  matcher: ["/dashboard/:path*", "/signout/:path*", "/api/nango/:path*"],
 };
