@@ -271,3 +271,146 @@ export const getMerchantSignupDetails = async ({ paypalMerchantId }: { paypalMer
         throw new Error(`Failed to load merchant signup details: ${error}`);
     }
 }
+
+export const getUserPaymentAuthorizeLink = async ({ email, state }: { email: string, state: string }) => {
+    const platformAccessToken = await fetchPayPalAccessToken();
+    const paypalReq = await fetch(`${process.env.PAYPAL_BASE_URL}/v3/vault/setup-tokens`, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${platformAccessToken}`,
+            "PayPal-Request-Id": `${Date.now().toString(36) + Math.random().toString(36).slice(2, 5)}`,
+        },
+        body: JSON.stringify({
+            "payment_source": {
+                "paypal": {
+                    "usage_pattern": "IMMEDIATE",
+                    "usage_type": "MERCHANT",
+                    "permit_multiple_payment_tokens": true,
+                    "customer_type": "CONSUMER",
+                    "experience_context": {
+                        "shipping_preference": "GET_FROM_FILE",
+                        "return_url": `${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize/users/paypal?&state=${state}`,
+                        "cancel_url": `${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize/users/paypal/cancel`,
+                        "user_action": "SETUP_NOW",
+                        "brand_name": "Payally",
+                        "locale": "en"
+                    }
+                },
+                "description": "Authorize Payally to pay automatically on AI Apps."
+            },
+            "customer": {
+                "merchant_customer_id": `${email}`
+            }
+        })
+
+    });
+
+    const response = await paypalReq.json();
+    return response;
+}
+
+export const createPaypalPaymentToken = async ({ paypalSetupToken }: { paypalSetupToken: string }) => {
+    const platformAccessToken = await fetchPayPalAccessToken();
+
+    const paypalReq = await fetch(`${process.env.PAYPAL_BASE_URL}/v3/vault/payment-tokens`, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${platformAccessToken}`,
+        },
+        body: JSON.stringify({
+            "payment_source": {
+                "token": {
+                    "type": "SETUP_TOKEN",
+                    "id": `${paypalSetupToken}`
+                }
+            }
+        })
+    });
+
+    if (!paypalReq.ok) {
+        const errorDetails = await paypalReq.text();
+        throw new Error(`PayPal payment-token API Error (${paypalReq.status}): ${errorDetails}`);
+    }
+
+    const response: unknown = await paypalReq.json();
+    if (typeof response !== "object" || response === null || !("id" in response) ||
+        typeof response.id !== "string" || !("customer" in response) ||
+        typeof response.customer !== "object" || response.customer === null ||
+        !("id" in response.customer) || typeof response.customer.id !== "string" ||
+        !("merchant_customer_id" in response.customer) ||
+        typeof response.customer.merchant_customer_id !== "string" ||
+        !("payment_source" in response) || typeof response.payment_source !== "object" ||
+        response.payment_source === null || !("paypal" in response.payment_source) ||
+        typeof response.payment_source.paypal !== "object" ||
+        response.payment_source.paypal === null) {
+        throw new Error("PayPal payment-token response did not contain the required customer and PayPal details.");
+    }
+
+    const customer = response.customer;
+    const paypal = response.payment_source.paypal;
+    const shipping = "shipping" in paypal && typeof paypal.shipping === "object" && paypal.shipping !== null
+        ? paypal.shipping
+        : undefined;
+    const shippingName = shipping && "name" in shipping && typeof shipping.name === "object" && shipping.name !== null
+        ? shipping.name
+        : undefined;
+    const shippingDetails = shipping && "address" in shipping && typeof shipping.address === "object" && shipping.address !== null
+        ? shipping.address
+        : undefined;
+    const payerName = "name" in paypal && typeof paypal.name === "object" && paypal.name !== null
+        ? paypal.name
+        : undefined;
+
+    const customerRecord = {
+        id: customer.id as string,
+        email: customer.merchant_customer_id as string,
+        paymentTokenId: response.id,
+        payerId: "payer_id" in paypal && typeof paypal.payer_id === "string" ? paypal.payer_id : undefined,
+        name: payerName && "full_name" in payerName && typeof payerName.full_name === "string"
+            ? payerName.full_name
+            : undefined,
+        consumerType: "customer_type" in paypal && typeof paypal.customer_type === "string"
+            ? paypal.customer_type
+            : undefined,
+        shippingAddress: shipping
+            ? {
+                name: shippingName && "full_name" in shippingName && typeof shippingName.full_name === "string"
+                    ? shippingName.full_name
+                    : undefined,
+                address: {
+                    addressLineOne: shippingDetails && "address_line_1" in shippingDetails && typeof shippingDetails.address_line_1 === "string"
+                        ? shippingDetails.address_line_1
+                        : undefined,
+                    city: shippingDetails && "admin_area_2" in shippingDetails && typeof shippingDetails.admin_area_2 === "string"
+                        ? shippingDetails.admin_area_2
+                        : undefined,
+                    state: shippingDetails && "admin_area_1" in shippingDetails && typeof shippingDetails.admin_area_1 === "string"
+                        ? shippingDetails.admin_area_1
+                        : undefined,
+                    zip: shippingDetails && "postal_code" in shippingDetails && typeof shippingDetails.postal_code === "string"
+                        ? shippingDetails.postal_code
+                        : undefined,
+                    country: shippingDetails && "country_code" in shippingDetails && typeof shippingDetails.country_code === "string"
+                        ? shippingDetails.country_code
+                        : undefined,
+                },
+            }
+            : undefined,
+    };
+
+    const existing = await client.models.CustomerUserData.get({ id: customerRecord.id });
+    if (existing.errors?.length) {
+        throw new Error(`Failed to look up saved PayPal customer data: ${existing.errors.map(({ message }) => message).join(", ")}`);
+    }
+
+    const savedCustomer = existing.data
+        ? await client.models.CustomerUserData.update(customerRecord)
+        : await client.models.CustomerUserData.create(customerRecord);
+    if (savedCustomer.errors?.length) {
+        throw new Error(`Failed to save PayPal customer data: ${savedCustomer.errors.map(({ message }) => message).join(", ")}`);
+    }
+
+    return {status: 200, msg: 'success'};
+}

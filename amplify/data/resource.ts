@@ -5,6 +5,26 @@ import { PayPalRetrieveRestCredentialsFunction } from '../functions/paypal-retri
 import { getPayPalAuthJWT } from '../functions/generate-paypal-auth-jwt/resource'
 
 const schema = a.schema({
+  CustomerUserData: a.model({
+    id: a.id(),
+    email: a.email(),
+    paymentTokenId: a.string(),
+    payerId: a.string(),
+    name: a.string(),
+    consumerType: a.string(),
+    shippingAddress: a.customType({
+      name: a.string(),
+      address: a.customType({
+        addressLineOne: a.string(),
+        city: a.string(),
+        state: a.string(),
+        zip: a.string(),
+        country: a.string(),
+      })
+    })
+  })
+  .authorization(allow => [allow.guest()]),
+
   StoreMerchantPaypalCredentials: a.model({
     id: a.id(),
     clientId: a.string(),
