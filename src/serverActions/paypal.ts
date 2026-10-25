@@ -65,12 +65,12 @@ export const fetchPaypalReferalLink = async ({ accessToken }: { accessToken: str
                                 "integration_type": "THIRD_PARTY",
                                 "third_party_details": {
                                     "features": [
-                                         "PAYMENT",
-                                         "REFUND",
-                                         "PARTNER_FEE",
-                                         "DELAY_FUNDS_DISBURSEMENT",
-                                         "VAULT",
-                                         "BILLING_AGREEMENT"
+                                        "PAYMENT",
+                                        "REFUND",
+                                        "PARTNER_FEE",
+                                        "DELAY_FUNDS_DISBURSEMENT",
+                                        "VAULT",
+                                        "BILLING_AGREEMENT"
                                     ]
                                 }
                             }
@@ -274,35 +274,38 @@ export const getMerchantSignupDetails = async ({ paypalMerchantId }: { paypalMer
     }
 }
 
-export const getUserPaymentAuthorizeLink = async ({ email, state }: { email: string, state: string }) => {
+export const getUserPaymentAuthorizeLink = async ({ email, state, paypalMerchantId }: { email: string, state: string, paypalMerchantId: string }) => {
     const platformAccessToken = await fetchPayPalAccessToken();
+    const jwtAuth = (await client.queries.getPayPalAuthJWT({sellerId: paypalMerchantId})).data?.jwt
     const paypalReq = await fetch(`${process.env.PAYPAL_BASE_URL}/v3/vault/setup-tokens`, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${platformAccessToken}`,
             "PayPal-Request-Id": `${Date.now().toString(36) + Math.random().toString(36).slice(2, 5)}`,
+            "PayPal-Auth-Assertion" : `${jwtAuth}`,
+            "PayPal-Partner-Attribution-Id": `${process.env.PAYALLY_PARTNER_ATTRIBUTION_ID}`,
         },
         body: JSON.stringify({
             "payment_source": {
                 "paypal": {
+                    "description": "Authorize Payally to pay automatically on AI Apps.",
                     "usage_pattern": "IMMEDIATE",
                     "usage_type": "MERCHANT",
                     "permit_multiple_payment_tokens": true,
                     "customer_type": "CONSUMER",
                     "experience_context": {
                         "shipping_preference": "GET_FROM_FILE",
-                        "return_url": `${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize/users/paypal?&state=${state}`,
+                        "return_url": `${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize/users/paypal?state=${encodeURIComponent(state)}&ext_paypal_merchant_id=${paypalMerchantId}`,
                         "cancel_url": `${process.env.PAYALLY_PLATFORM_BASE_URL}/authorize/users/paypal/cancel`,
                         "user_action": "SETUP_NOW",
                         "brand_name": "Payally",
-                        "locale": "en"
+                        "locale": "en-US"
                     }
-                },
-                "description": "Authorize Payally to pay automatically on AI Apps."
+                }
             },
             "customer": {
-                "merchant_customer_id": `${email}`
+                "merchant_customer_id": String(email)
             }
         })
 
@@ -312,14 +315,24 @@ export const getUserPaymentAuthorizeLink = async ({ email, state }: { email: str
     return response;
 }
 
-export const createPaypalPaymentToken = async ({ paypalSetupToken }: { paypalSetupToken: string }) => {
+export const createPaypalPaymentToken = async ({ 
+    paypalSetupToken, 
+    paypalMerchantId 
+}: { 
+    paypalSetupToken: string;
+    paypalMerchantId: string;
+}) => {
     const platformAccessToken = await fetchPayPalAccessToken();
+    const jwtAuth = (await client.queries.getPayPalAuthJWT({sellerId: "DZWR8V78BHZ6G"})).data?.jwt
 
     const paypalReq = await fetch(`${process.env.PAYPAL_BASE_URL}/v3/vault/payment-tokens`, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${platformAccessToken}`,
+            "PayPal-Request-Id": `${Date.now().toString(36) + Math.random().toString(36).slice(2, 5)}`,
+            "PayPal-Auth-Assertion" : `${jwtAuth}`,
+            "PayPal-Partner-Attribution-Id": `${process.env.PAYALLY_PARTNER_ATTRIBUTION_ID}`
         },
         body: JSON.stringify({
             "payment_source": {
@@ -365,8 +378,13 @@ export const createPaypalPaymentToken = async ({ paypalSetupToken }: { paypalSet
         ? paypal.name
         : undefined;
 
+    // Generate a unique ID for this record (using payment token ID as unique identifier)
+    const recordId = response.id;
+
     const customerRecord = {
-        id: customer.id as string,
+        id: recordId,
+        paypalMerchantId: paypalMerchantId,
+        paypalCustomerId: customer.id as string,
         email: customer.merchant_customer_id as string,
         paymentTokenId: response.id,
         payerId: "payer_id" in paypal && typeof paypal.payer_id === "string" ? paypal.payer_id : undefined,
@@ -402,7 +420,11 @@ export const createPaypalPaymentToken = async ({ paypalSetupToken }: { paypalSet
             : undefined,
     };
 
-    const existing = await client.models.CustomerUserData.get({ id: customerRecord.id });
+    // Use composite key (paypalMerchantId, id) for lookup
+    const existing = await client.models.CustomerUserData.get({ 
+        paypalMerchantId: paypalMerchantId, 
+        id: recordId 
+    });
     if (existing.errors?.length) {
         throw new Error(`Failed to look up saved PayPal customer data: ${existing.errors.map(({ message }) => message).join(", ")}`);
     }
@@ -414,5 +436,5 @@ export const createPaypalPaymentToken = async ({ paypalSetupToken }: { paypalSet
         throw new Error(`Failed to save PayPal customer data: ${savedCustomer.errors.map(({ message }) => message).join(", ")}`);
     }
 
-    return {status: 200, msg: 'success'};
+    return { status: 200, msg: 'success' };
 }

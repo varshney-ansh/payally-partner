@@ -8,7 +8,9 @@ import { GetProductByIdApiFunction } from '../functions/api-get-product-by-id/re
 
 const schema = a.schema({
   CustomerUserData: a.model({
-    id: a.id(),
+    id: a.id().required(),
+    paypalMerchantId: a.string().required(),
+    paypalCustomerId: a.string(),
     email: a.email(),
     paymentTokenId: a.string(),
     payerId: a.string(),
@@ -25,6 +27,7 @@ const schema = a.schema({
       })
     })
   })
+  .identifier(['paypalMerchantId', 'id'])
   .authorization(allow => [allow.guest()]),
 
   StoreMerchantPaypalCredentials: a.model({
