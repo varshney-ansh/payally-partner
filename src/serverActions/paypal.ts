@@ -65,10 +65,14 @@ export const fetchPaypalReferalLink = async ({ accessToken }: { accessToken: str
                                 "integration_type": "THIRD_PARTY",
                                 "third_party_details": {
                                     "features": [
-                                        "PAYMENT",
-                                        "REFUND",
-                                        "PARTNER_FEE",
-                                        "DELAY_FUNDS_DISBURSEMENT"
+                                         "PAYMENT",
+                                         "REFUND",
+                                         "PARTNER_FEE",
+                                         "DELAY_FUNDS_DISBURSEMENT",
+                                         "VAULT",
+                                         "BILLING_AGREEMENT",
+                                         "TRACKING_SHIPMENT_READWRITE",
+                                         "COMMERCE_ADMIN"
                                     ]
                                 }
                             }

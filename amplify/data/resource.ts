@@ -3,6 +3,8 @@ import { PayPalPlatformAccessTokenFunction } from '../functions/paypal-platform-
 import { PayPalMerchantAccessTokenFunction } from '../functions/paypal-merchant-onboard-token/resource';
 import { PayPalRetrieveRestCredentialsFunction } from '../functions/paypal-retrieve-rest-credentials/resource';
 import { getPayPalAuthJWT } from '../functions/generate-paypal-auth-jwt/resource'
+import { ExploreProductApiFunction } from '../functions/api-explore-product/resource';
+import { GetProductByIdApiFunction } from '../functions/api-get-product-by-id/resource';
 
 const schema = a.schema({
   CustomerUserData: a.model({
@@ -140,7 +142,8 @@ const schema = a.schema({
     .returns(a.ref('PayPalAuthJWTResponse'))
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(getPayPalAuthJWT)),
-});
+})
+.authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction)]);
 
 export type Schema = ClientSchema<typeof schema>;
 
