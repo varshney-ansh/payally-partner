@@ -3,6 +3,7 @@ import type { Schema } from "../../../../amplify/data/resource"
 import { Amplify } from "aws-amplify"
 import { generateClient } from "aws-amplify/api"
 import outputs from "../../../../amplify_outputs.json"
+import { merchantOnboardingStatus } from '@/serverActions/paypal'
 
 Amplify.configure(outputs)
 
@@ -36,6 +37,11 @@ export async function GET(request: NextRequest) {
         : await client.models.StoreMerchantInfo.create({ id: merchantIdInPayPal, ...merchantInfo });
     if (saved.errors?.length) {
         throw new Error(`Failed to save merchant info: ${saved.errors.map(({ message }) => message).join(", ")}`);
+    }
+
+    const saveonboardingstatus = await merchantOnboardingStatus({merchantId: merchantIdInPayPal})
+    if(saveonboardingstatus.errors){
+        console.error(`error: ${saveonboardingstatus}`)
     }
 
     const redirectUrl = new URL(`/authorize-payments/${merchantIdInPayPal}`, process.env.PAYALLY_PLATFORM_BASE_URL);
