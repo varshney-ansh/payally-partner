@@ -13,11 +13,12 @@ export function EditorialFeatureSwitcher() {
       <div className="max-w-[1080px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-stretch">
         
         <div className="lg:col-span-6 flex flex-col justify-between py-2">
-          <div className="flex flex-col items-start select-none space-y-1">
+          <div className="flex flex-col items-start select-none space-y-1 w-full">
             <button
               type="button"
               onClick={() => setActive("paid")}
-              className={`text-left text-[48px] sm:text-[64px] font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer ${
+              style={{ fontSize: 'clamp(48px, 8vw, 64px)' }}
+              className={`text-left font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer w-full ${
                 active === "paid" ? "text-white" : "text-[#3A3A3C] hover:text-neutral-500"
               }`}
             >
@@ -26,7 +27,8 @@ export function EditorialFeatureSwitcher() {
             <button
               type="button"
               onClick={() => setActive("growing")}
-              className={`text-left text-[48px] sm:text-[64px] font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer ${
+              style={{ fontSize: 'clamp(48px, 8vw, 64px)' }}
+              className={`text-left font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer w-full ${
                 active === "growing" ? "text-white" : "text-[#3A3A3C] hover:text-neutral-500"
               }`}
             >
@@ -35,7 +37,8 @@ export function EditorialFeatureSwitcher() {
             <button
               type="button"
               onClick={() => setActive("ahead")}
-              className={`text-left text-[48px] sm:text-[64px] font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer ${
+              style={{ fontSize: 'clamp(48px, 8vw, 64px)' }}
+              className={`text-left font-black tracking-[-0.035em] leading-[1.05] transition-colors cursor-pointer w-full ${
                 active === "ahead" ? "text-white" : "text-[#3A3A3C] hover:text-neutral-500"
               }`}
             >
@@ -107,11 +110,6 @@ export function EditorialFeatureSwitcher() {
         <div className="lg:col-span-6 flex justify-center lg:justify-end">
           <div className="relative w-full max-w-[460px] aspect-[4/5] rounded-[28px] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-6">
             
-            <span className="absolute top-4 left-5 text-[11px] font-mono text-neutral-500">
-              {active === "paid" && "public/assets/checkout-laptop.jpg"}
-              {active === "growing" && "public/assets/foliage-backdrop.jpg"}
-              {active === "ahead" && "public/assets/shopper-bag.jpg"}
-            </span>
             {active === "paid" && (
               <div className="w-full max-w-[330px] bg-white text-black rounded-2xl p-6 shadow-2xl">
                 <div className="flex items-center justify-between mb-5">
