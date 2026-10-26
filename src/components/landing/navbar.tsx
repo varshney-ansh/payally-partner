@@ -11,7 +11,7 @@ export function Navbar() {
   return (
     <div className="w-full sticky top-0 z-50 bg-white">
       <header className="w-full bg-white border-b border-neutral-200/80">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 h-[72px] flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center gap-2" aria-label="Payally Home">
               <div className="relative flex items-center">
@@ -24,7 +24,7 @@ export function Navbar() {
               </div>
             </Link>
             <nav className="hidden lg:flex items-center gap-7 text-[15px] font-semibold text-neutral-900">
-              <Link href="#solutions" className="flex items-center gap-1.5 hover:text-[#003087] transition-colors">
+              <Link href="#agent-ready" className="flex items-center gap-1.5 hover:text-[#003087] transition-colors">
                 <span>Platform</span>
                 <ChevronDown className="w-4 h-4 stroke-[2.5]" />
               </Link>
@@ -35,6 +35,9 @@ export function Navbar() {
               <Link href="#developers" className="flex items-center gap-1.5 hover:text-[#003087] transition-colors">
                 <span>Developers</span>
                 <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+              </Link>
+              <Link href="/contact" className="flex items-center gap-1.5 hover:text-[#003087] transition-colors">
+                Contact
               </Link>
               <Link href="/about" className="hover:text-[#003087] transition-colors">
                 About
@@ -77,13 +80,13 @@ export function Navbar() {
 
                   <nav className="flex flex-col gap-5 mt-8 text-[17px] font-bold text-neutral-900">
                     <Link href="#agent-ready" onClick={() => setMobileOpen(false)}>
-                      Agent Ready
+                      Platform
                     </Link>
                     <Link href="#store-sync" onClick={() => setMobileOpen(false)}>
-                      Store Sync
+                      Business
                     </Link>
                     <Link href="#developers" onClick={() => setMobileOpen(false)}>
-                      Developer Docs
+                      Developers
                     </Link>
                     <Link href="/about" onClick={() => setMobileOpen(false)}>
                       About
@@ -116,32 +119,6 @@ export function Navbar() {
           </Dialog.Root>
         </div>
       </header>
-      <div className="w-full bg-white border-b border-neutral-200">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 h-14 flex items-center justify-between">
-          <Link
-            href="#agent-ready"
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#D9F2FF] text-neutral-950 font-bold text-[14px] hover:bg-[#c6eaff] transition-colors"
-          >
-            <span>Business Services</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <nav className="hidden sm:flex items-center gap-7 text-[14px] font-medium text-neutral-800">
-            <Link href="#agent-ready" className="hover:text-black transition-colors">
-              Agent Ready
-            </Link>
-            <Link href="#store-sync" className="hover:text-black transition-colors">
-              Store Sync
-            </Link>
-            <Link href="#developers" className="hover:text-black transition-colors">
-              Developer Docs
-            </Link>
-            <Link href="/contact" className="hover:text-black transition-colors">
-              Contact Sales
-            </Link>
-          </nav>
-        </div>
-      </div>
     </div>
   );
 }
