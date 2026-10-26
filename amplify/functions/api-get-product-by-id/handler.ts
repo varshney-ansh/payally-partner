@@ -11,6 +11,128 @@ Amplify.configure(resourceConfig, libraryOptions);
 
 const client = generateClient<Schema>();
 
+interface Money {
+    amount: number;
+    currency: string;
+}
+
+interface ProductImage {
+    url: string;
+    altText?: string;
+}
+
+interface ProductVariant {
+    id: string;
+    title: string;
+    price: Money;
+    compareAtPrice?: Money;
+    image?: ProductImage;
+}
+
+interface Product {
+    id: string;
+    title: string;
+    description?: string;
+    seller?: string;
+    image?: ProductImage;
+    images: ProductImage[];
+    category?: string;
+    price: Money;
+    variants: ProductVariant[];
+    rating?: { value: number; count: number };
+}
+
+function mapShopifyProduct(raw: any): Product {
+    const product = raw?.data?.product ?? {};
+    const shopCurrency: string =
+        product?.variants?.nodes?.[0]?.presentmentPrices?.nodes?.[0]?.price?.currencyCode ?? "USD";
+
+    const variants: ProductVariant[] = (product?.variants?.nodes ?? []).map((v: any) => ({
+        id: v.id,
+        title: v.title,
+        price: { amount: Number(v.price), currency: shopCurrency },
+        ...(v.compareAtPrice != null
+            ? { compareAtPrice: { amount: Number(v.compareAtPrice), currency: shopCurrency } }
+            : {}),
+    }));
+
+    const images: ProductImage[] = (product?.media?.nodes ?? [])
+        .filter((m: any) => m?.image?.url)
+        .map((m: any) => ({ url: m.image.url, altText: m.alt ?? undefined }));
+
+    const mainImage: ProductImage | undefined = product?.featuredImage?.url
+        ? { url: product.featuredImage.url, altText: product.featuredImage.altText ?? undefined }
+        : images[0];
+
+    return {
+        id: product.id,
+        title: product.title ?? product?.seo?.title,
+        description: product.descriptionHtml ?? product?.seo?.description ?? undefined,
+        seller: product.vendor ?? undefined,
+        image: mainImage,
+        images,
+        category: product.productType ?? undefined,
+        price: variants[0]?.price ?? { amount: 0, currency: shopCurrency },
+        variants,
+    };
+}
+
+function mapChannel3Product(raw: any): Product {
+    const offer = raw?.offers?.[0];
+    const offerCurrency: string = offer?.price?.currency ?? "USD";
+    const offerPrice: Money = {
+        amount: Number(offer?.price?.price ?? 0),
+        currency: offerCurrency,
+    };
+
+    const images: ProductImage[] = (raw?.images ?? [])
+        .filter((img: any) => img?.url)
+        .map((img: any) => ({ url: img.url, altText: img.alt_text ?? undefined }));
+
+    const mainImage: ProductImage | undefined =
+        (raw?.images ?? []).find((img: any) => img?.is_main_image)
+            ? {
+                  url: (raw.images.find((img: any) => img.is_main_image)).url,
+                  altText: (raw.images.find((img: any) => img.is_main_image)).alt_text ?? undefined,
+              }
+            : images[0];
+
+    let variants: ProductVariant[];
+    if (Array.isArray(raw?.variants) && raw.variants.length > 0) {
+        variants = raw.variants.flatMap((option: any) =>
+            (option?.values ?? []).map((value: any) => ({
+                id: value.product_id,
+                title: value.label,
+                price: offerPrice,
+                ...(value.thumbnail_url ? { image: { url: value.thumbnail_url } } : {}),
+            }))
+        );
+    } else {
+        variants = [
+            {
+                id: raw.id,
+                title: raw.title,
+                price: offerPrice,
+            },
+        ];
+    }
+
+    return {
+        id: raw.id,
+        title: raw.title,
+        description: raw.description ?? undefined,
+        seller: raw?.brands?.[0]?.name ?? undefined,
+        image: mainImage,
+        images,
+        category: raw?.category?.title ?? undefined,
+        price: offerPrice,
+        variants,
+        ...(raw?.ratings
+            ? { rating: { value: raw.ratings.value, count: raw.ratings.count } }
+            : {}),
+    };
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
     const queryparams = event.queryStringParameters;
     const productId = queryparams?.productId;
@@ -65,7 +187,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Headers": "*",
                 },
-                body: JSON.stringify(shopifyData),
+                body: JSON.stringify(mapShopifyProduct(shopifyData)),
             }
             break;
 
@@ -98,7 +220,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Headers": "*",
                 },
-                body: JSON.stringify(channel3Data),
+                body: JSON.stringify(mapChannel3Product(channel3Data)),
             }
             break;
 
