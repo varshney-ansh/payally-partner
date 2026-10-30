@@ -9,6 +9,8 @@ import { ExploreProductApiFunction } from './functions/api-explore-product/resou
 import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import {GetProductByIdApiFunction} from './functions/api-get-product-by-id/resource'
 import { CheckoutApiFunction } from './functions/api-checkout/resource'
+import { ShowOrdersApiFunction } from './functions/api-show-orders/resource'
+import { ShowOrderByIdApiFunction } from './functions/api-show-order-by-id/resource'
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
  */
@@ -21,7 +23,9 @@ const backend = defineBackend({
   getPayPalAuthJWT,
   ExploreProductApiFunction,
   GetProductByIdApiFunction,
-  CheckoutApiFunction
+  CheckoutApiFunction,
+  ShowOrdersApiFunction,
+  ShowOrderByIdApiFunction
 });
 
 // Create a custom CDK stack within your Amplify deployment context
@@ -42,10 +46,22 @@ const api = new apigateway.RestApi(customStack, 'PayallyAPI', {
 const productsResource = api.root.addResource('explore-products');
 const getProductbyIdResource = api.root.addResource('get-product-by-id');
 const checkoutResource = api.root.addResource('checkout');
+const showOrdersResource = api.root.addResource('show-orders');
+const showOrderByIdResource = api.root.addResource('show-order-by-id');
 
 checkoutResource.addMethod(
   'POST',
   new apigateway.LambdaIntegration(backend.CheckoutApiFunction.resources.lambda)
+)
+
+showOrdersResource.addMethod(
+  'POST',
+  new apigateway.LambdaIntegration(backend.ShowOrdersApiFunction.resources.lambda)
+)
+
+showOrderByIdResource.addMethod(
+  'POST',
+  new apigateway.LambdaIntegration(backend.ShowOrderByIdApiFunction.resources.lambda)
 )
 
 getProductbyIdResource.addMethod(

@@ -6,6 +6,8 @@ import { getPayPalAuthJWT } from '../functions/generate-paypal-auth-jwt/resource
 import { ExploreProductApiFunction } from '../functions/api-explore-product/resource';
 import { GetProductByIdApiFunction } from '../functions/api-get-product-by-id/resource';
 import { CheckoutApiFunction } from '../functions/api-checkout/resource';
+import { ShowOrdersApiFunction } from '../functions/api-show-orders/resource';
+import { ShowOrderByIdApiFunction } from '../functions/api-show-order-by-id/resource';
 
 const schema = a.schema({
   CustomerUserData: a.model({
@@ -173,7 +175,7 @@ const schema = a.schema({
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(getPayPalAuthJWT)),
 })
-.authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction), allow.resource(CheckoutApiFunction)]);
+.authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction), allow.resource(CheckoutApiFunction), allow.resource(ShowOrdersApiFunction), allow.resource(ShowOrderByIdApiFunction)]);
 
 export type Schema = ClientSchema<typeof schema>;
 
