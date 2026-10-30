@@ -8,6 +8,7 @@ import { getPayPalAuthJWT } from './functions/generate-paypal-auth-jwt/resource'
 import { ExploreProductApiFunction } from './functions/api-explore-product/resource'
 import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import {GetProductByIdApiFunction} from './functions/api-get-product-by-id/resource'
+import { CheckoutApiFunction } from './functions/api-checkout/resource'
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
  */
@@ -19,7 +20,8 @@ const backend = defineBackend({
   PayPalRetrieveRestCredentialsFunction,
   getPayPalAuthJWT,
   ExploreProductApiFunction,
-  GetProductByIdApiFunction
+  GetProductByIdApiFunction,
+  CheckoutApiFunction
 });
 
 // Create a custom CDK stack within your Amplify deployment context
@@ -39,6 +41,12 @@ const api = new apigateway.RestApi(customStack, 'PayallyAPI', {
 
 const productsResource = api.root.addResource('explore-products');
 const getProductbyIdResource = api.root.addResource('get-product-by-id');
+const checkoutResource = api.root.addResource('checkout');
+
+checkoutResource.addMethod(
+  'POST',
+  new apigateway.LambdaIntegration(backend.CheckoutApiFunction.resources.lambda)
+)
 
 getProductbyIdResource.addMethod(
   'GET',

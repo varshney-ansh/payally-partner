@@ -5,6 +5,7 @@ import { PayPalRetrieveRestCredentialsFunction } from '../functions/paypal-retri
 import { getPayPalAuthJWT } from '../functions/generate-paypal-auth-jwt/resource'
 import { ExploreProductApiFunction } from '../functions/api-explore-product/resource';
 import { GetProductByIdApiFunction } from '../functions/api-get-product-by-id/resource';
+import { CheckoutApiFunction } from '../functions/api-checkout/resource';
 
 const schema = a.schema({
   CustomerUserData: a.model({
@@ -29,6 +30,32 @@ const schema = a.schema({
   })
   .identifier(['paypalMerchantId', 'id'])
   .authorization(allow => [allow.guest()]),
+
+  OrderItem: a.customType({
+    name: a.string(),
+    quantity: a.string(),
+    unitAmount: a.string(),
+    sku: a.string(),
+    category: a.string(),
+  }),
+
+  Order: a.model({
+    id: a.id().required(),
+    paypalMerchantId: a.string().required(),
+    userEmail: a.string(),
+    status: a.string(),
+    currencyCode: a.string(),
+    itemTotal: a.string(),
+    platformFee: a.string(),
+    grandTotal: a.string(),
+    captureId: a.string(),
+    captureStatus: a.string(),
+    payerEmail: a.string(),
+    payerName: a.string(),
+    items: a.ref('OrderItem').array(),
+  })
+    .identifier(['paypalMerchantId', 'id'])
+    .authorization(allow => [allow.guest()]),
 
   StoreMerchantPaypalCredentials: a.model({
     id: a.id(),
@@ -146,7 +173,7 @@ const schema = a.schema({
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(getPayPalAuthJWT)),
 })
-.authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction)]);
+.authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction), allow.resource(CheckoutApiFunction)]);
 
 export type Schema = ClientSchema<typeof schema>;
 
