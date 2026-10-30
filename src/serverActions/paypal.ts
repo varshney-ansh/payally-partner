@@ -378,8 +378,26 @@ export const createPaypalPaymentToken = async ({
         ? paypal.name
         : undefined;
 
-    // Generate a unique ID for this record (using payment token ID as unique identifier)
-    const recordId = response.id;
+    const customerEmail = customer.merchant_customer_id as string;
+
+    // Look up any existing record for this buyer (email) at this merchant, so a
+    // re-authorization overwrites the same row instead of creating a duplicate
+    // keyed by the newly issued payment-token id.
+    const existingForUser = await client.models.CustomerUserData.list({
+        filter: {
+            email: { eq: customerEmail },
+            paypalMerchantId: { eq: paypalMerchantId },
+        },
+    });
+    if (existingForUser.errors?.length) {
+        throw new Error(`Failed to look up saved PayPal customer data: ${existingForUser.errors.map(({ message }) => message).join(", ")}`);
+    }
+
+    const existingRecord = existingForUser.data?.[0];
+
+    // Reuse the existing row's id when present; otherwise key the new row by the
+    // payment-token id.
+    const recordId = existingRecord?.id ?? response.id;
 
     const customerRecord = {
         id: recordId,
@@ -420,20 +438,25 @@ export const createPaypalPaymentToken = async ({
             : undefined,
     };
 
-    // Use composite key (paypalMerchantId, id) for lookup
-    const existing = await client.models.CustomerUserData.get({ 
-        paypalMerchantId: paypalMerchantId, 
-        id: recordId 
-    });
-    if (existing.errors?.length) {
-        throw new Error(`Failed to look up saved PayPal customer data: ${existing.errors.map(({ message }) => message).join(", ")}`);
-    }
-
-    const savedCustomer = existing.data
+    const savedCustomer = existingRecord
         ? await client.models.CustomerUserData.update(customerRecord)
         : await client.models.CustomerUserData.create(customerRecord);
     if (savedCustomer.errors?.length) {
         throw new Error(`Failed to save PayPal customer data: ${savedCustomer.errors.map(({ message }) => message).join(", ")}`);
+    }
+
+    // Clean up any pre-existing duplicate rows for this buyer/merchant (rows
+    // created before the overwrite-by-email fix), keeping only the record we
+    // just saved.
+    const duplicates = (existingForUser.data ?? []).filter((record) => record.id !== recordId);
+    for (const duplicate of duplicates) {
+        const deleted = await client.models.CustomerUserData.delete({
+            paypalMerchantId: duplicate.paypalMerchantId,
+            id: duplicate.id,
+        });
+        if (deleted.errors?.length) {
+            console.error(`Failed to delete duplicate CustomerUserData row ${duplicate.id}: ${deleted.errors.map(({ message }) => message).join(", ")}`);
+        }
     }
 
     return { status: 200, msg: 'success' };

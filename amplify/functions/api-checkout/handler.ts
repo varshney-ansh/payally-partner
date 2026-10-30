@@ -113,19 +113,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         });
     }
 
-    // 2. Generate the PayPal auth-assertion JWT for this merchant.
-    const jwtResult = await client.queries.getPayPalAuthJWT({ sellerId: merchantId });
-    const authAssertion = jwtResult.data?.jwt;
+    // 2 & 3. Generate the auth-assertion JWT and fetch the platform access
+    // token in parallel — they are independent of each other.
+    const [jwtResult, tokenResult] = await Promise.all([
+        client.queries.getPayPalAuthJWT({ sellerId: merchantId }),
+        client.queries.PayPalPlatformAccessTokenFunction(),
+    ]);
 
+    const authAssertion = jwtResult.data?.jwt;
     if (jwtResult.errors?.length || !authAssertion) {
         console.error("getPayPalAuthJWT errors:", jwtResult.errors);
         return jsonResponse(502, { error: "Failed to generate PayPal auth assertion" });
     }
 
-    // 3. Fetch the platform access token.
-    const tokenResult = await client.queries.PayPalPlatformAccessTokenFunction();
     const accessToken = tokenResult.data?.accessToken;
-
     if (tokenResult.errors?.length || !accessToken) {
         console.error("PayPalPlatformAccessTokenFunction errors:", tokenResult.errors);
         return jsonResponse(502, { error: "Failed to fetch PayPal access token" });

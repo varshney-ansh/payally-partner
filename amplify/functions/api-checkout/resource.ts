@@ -3,6 +3,7 @@ import { defineFunction, secret } from "@aws-amplify/backend";
 export const CheckoutApiFunction = defineFunction({
     name: "api-checkout",
     entry: './handler.ts',
+    timeoutSeconds: 60,
     environment: {
         PAYPAL_BASE_URL: process.env.PAYPAL_BASE_URL || (() => { throw new Error("PAYPAL_BASE_URL is required") })(),
         PAYPAL_CLIENT_ID: secret('PAYPAL_CLIENT_ID') || (() => { throw new Error("PAYPAL_CLIENT_ID is required") })(),
