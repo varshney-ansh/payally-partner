@@ -24,21 +24,7 @@ export function GlobalCommerceSection() {
           </p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 flex justify-center">
-            <div className="relative w-full max-w-[440px] aspect-[4/5] rounded-[24px] bg-neutral-100 border border-neutral-200 overflow-hidden flex items-center justify-center">
-              <span className="text-xs font-mono text-neutral-400">
-                public/assets/merchant-inventory.jpg
-              </span>
-              <div className="absolute bottom-5 left-5 right-5 rounded-2xl bg-neutral-900/75 backdrop-blur-md text-white px-6 py-4 flex items-center justify-between">
-                <div className="flex items-baseline gap-4">
-                  <span className="text-[26px] font-black">130+</span>
-                  <span className="text-[26px] font-black">200+</span>
-                </div>
-                <span className="text-xs font-semibold text-neutral-200">
-                  Global PayPal Rails
-                </span>
-              </div>
-            </div>
+          <div className="lg:col-span-3 flex justify-center">
           </div>
           <div className="lg:col-span-6 flex flex-col">
             <div className="pb-7 border-b border-neutral-200 relative">

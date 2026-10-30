@@ -39,7 +39,7 @@ export function FooterSection() {
           </div>
         </div>
       </section>
-      <footer className="w-full bg-black text-white py-16 px-4 sm:px-8">
+      <footer className="w-full bg-black text-white py-6 px-4 sm:px-8">
         <div className="max-w-[1140px] mx-auto">
           <div className="mb-10">
             <span className="text-[28px] font-black tracking-tighter text-white">
@@ -48,23 +48,20 @@ export function FooterSection() {
           </div>
           <div className="pb-6 border-b border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[13px] font-bold text-white">
             <div className="flex flex-wrap gap-x-7 gap-y-3">
-              <Link href="/about" className="hover:underline">
-                Help
+              <Link href="/dashboard" className="hover:underline">
+                Dashboard
               </Link>
               <Link href="/contact" className="hover:underline">
                 Contact us
               </Link>
-              <Link href="/about" className="hover:underline">
-                Fees
+              <Link href="/faq" className="hover:underline">
+                FAQ
               </Link>
               <Link href="/about" className="hover:underline">
-                Security
+                About
               </Link>
-              <Link href="/shop" className="hover:underline">
-                Shop
-              </Link>
-              <Link href="#developers" className="hover:underline">
-                Business Resource Center
+              <Link href="/docs" className="hover:underline">
+                Docs
               </Link>
             </div>
 
@@ -72,39 +69,6 @@ export function FooterSection() {
               <Globe className="w-4 h-4" />
               <span>India</span>
             </div>
-          </div>
-          <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[12px] font-bold text-white">
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Link href="/about" className="hover:underline">
-                About
-              </Link>
-              <Link href="/about" className="hover:underline">
-                Newsroom
-              </Link>
-              <Link href="#developers" className="hover:underline">
-                Developers
-              </Link>
-              <Link href="/about" className="hover:underline">
-                Partners
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Link href="/about" className="hover:underline">
-                Accessibility
-              </Link>
-              <Link href="/about" className="hover:underline">
-                Cookies
-              </Link>
-              <Link href="/about" className="hover:underline">
-                Privacy
-              </Link>
-              <Link href="/about" className="hover:underline">
-                Legal
-              </Link>
-            </div>
-          </div>
-          <div className="text-[11px] text-neutral-400 leading-[1.6]">
           </div>
         </div>
       </footer>
