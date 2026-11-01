@@ -323,7 +323,7 @@ export const createPaypalPaymentToken = async ({
     paypalMerchantId: string;
 }) => {
     const platformAccessToken = await fetchPayPalAccessToken();
-    const jwtAuth = (await client.queries.getPayPalAuthJWT({sellerId: "DZWR8V78BHZ6G"})).data?.jwt
+    const jwtAuth = (await client.queries.getPayPalAuthJWT({sellerId: paypalMerchantId})).data?.jwt
 
     const paypalReq = await fetch(`${process.env.PAYPAL_BASE_URL}/v3/vault/payment-tokens`, {
         method: 'POST',
