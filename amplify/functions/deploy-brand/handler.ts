@@ -23,6 +23,84 @@ const cf = new CloudFormationClient({ region: env.BRAND_STACK_REGION });
 const apigw = new APIGatewayClient({ region: env.PAYALLY_API_REGION });
 
 /**
+ * Fetch an Auth0 Management API access token using the shared M2M app
+ * (client-credentials grant). The token is requested from the canonical tenant
+ * domain with the Management API audience.
+ */
+async function getAuth0MgmtToken(): Promise<string> {
+    const res = await fetch(`https://${env.AUTH0_TENANT_DOMAIN}/oauth/token`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            grant_type: "client_credentials",
+            client_id: (env.AUTH0_CLIENT_ID ?? "").trim(),
+            client_secret: (env.AUTH0_CLIENT_SECRET ?? "").trim(),
+            audience: env.AUTH0_MGMT_AUDIENCE,
+        }),
+    });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Auth0 token request failed (${res.status}): ${text}`);
+    }
+    const json = (await res.json()) as { access_token?: string };
+    if (!json.access_token) {
+        throw new Error("Auth0 token response did not include an access_token");
+    }
+    return json.access_token;
+}
+
+/**
+ * Create (or reuse) an Auth0 Resource Server (API) for this brand whose
+ * audience/identifier is the brand's MCP URL (with trailing slash). Idempotent:
+ * if a resource server already exists for that identifier, it is left as-is.
+ */
+async function ensureBrandAuth0Api(subdomain: string): Promise<void> {
+    const identifier = `https://${subdomain}.mcp.payally.world/`;
+    const name = `${subdomain}-mcp`;
+    const base = `https://${env.AUTH0_TENANT_DOMAIN}/api/v2`;
+
+    const token = await getAuth0MgmtToken();
+    const authHeaders = {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+    };
+
+    // Idempotency: look up existing resource servers by identifier.
+    const lookup = await fetch(
+        `${base}/resource-servers?identifiers=${encodeURIComponent(identifier)}`,
+        { headers: authHeaders }
+    );
+    if (lookup.ok) {
+        const existing = (await lookup.json()) as Array<{ identifier?: string }>;
+        if (Array.isArray(existing) && existing.some((rs) => rs.identifier === identifier)) {
+            return; // Already provisioned.
+        }
+    }
+
+    // Create the per-brand API. Audience = the brand MCP URL.
+    const res = await fetch(`${base}/resource-servers`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+            name,
+            identifier,
+            signing_alg: "RS256",
+            token_lifetime: 86400,
+            token_lifetime_for_web: 7200,
+            skip_consent_for_verifiable_first_party_clients: true,
+            allow_offline_access: false,
+            enforce_policies: false,
+        }),
+    });
+
+    // 409 == already exists (race); treat as success.
+    if (!res.ok && res.status !== 409) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Auth0 resource server create failed (${res.status}): ${text}`);
+    }
+}
+
+/**
  * Create (or reuse) an API key for this brand in the Payally API region,
  * attach it to the shared usage plan, and return its plaintext value so it can
  * be injected into the brand container as PAYALLY-X-APIKEY.
@@ -126,6 +204,22 @@ export const handler: Schema["deployBrand"]["functionHandler"] = async (event) =
             stackName,
             serviceId,
             message: e.message ?? "Failed to provision Payally API key",
+        };
+    }
+
+    // Provision (or reuse) the per-brand Auth0 Resource Server (API) whose
+    // audience is the brand's MCP URL. The MCP container validates tokens
+    // against this audience (AUTH0_AUDIENCE in the template).
+    try {
+        await ensureBrandAuth0Api(subdomain);
+    } catch (auth0Err) {
+        const e = auth0Err as { message?: string };
+        console.error("Failed to provision Auth0 API for brand", e);
+        return {
+            status: "ERROR",
+            stackName,
+            serviceId,
+            message: e.message ?? "Failed to provision Auth0 API for this brand",
         };
     }
 

@@ -14,6 +14,11 @@ export const deployBrandFunction = defineFunction({
         PAYALLY_API_REGION: "eu-north-1",
         // Existing usage plan the per-brand API keys are attached to.
         PAYALLY_USAGE_PLAN_ID: "uuepjj",
+        // Auth0 tenant (canonical domain) + Management API audience used to
+        // provision a per-brand Resource Server (API) whose audience is the
+        // brand's MCP URL. The same M2M app (AUTH0_CLIENT_ID/SECRET) is used.
+        AUTH0_TENANT_DOMAIN: "dev-rve1br3wqis2kod3.us.auth0.com",
+        AUTH0_MGMT_AUDIENCE: "https://dev-rve1br3wqis2kod3.us.auth0.com/api/v2/",
         // Public S3 URL of the uploaded CloudFormation template.
         BRAND_TEMPLATE_URL: "https://payally-partner-personal-bucket.s3.eu-west-1.amazonaws.com/brandmcptemplate.json",
         // Shared across all brands. Pass secret() references directly — the
