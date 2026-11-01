@@ -103,6 +103,9 @@ backend.deployBrandFunction.resources.lambda.addToRolePolicy(
       'logs:DeleteLogGroup',
       'logs:PutRetentionPolicy',
       'logs:DescribeLogGroups',
+      // API Gateway — mint per-brand API keys and attach them to the usage plan
+      'apigateway:POST',
+      'apigateway:GET',
     ],
     resources: ['*'],
   })
@@ -129,28 +132,48 @@ const checkoutResource = api.root.addResource('checkout');
 const showOrdersResource = api.root.addResource('show-orders');
 const showOrderByIdResource = api.root.addResource('show-order-by-id');
 
+// Every route requires a valid API key (x-api-key header).
 checkoutResource.addMethod(
   'POST',
-  new apigateway.LambdaIntegration(backend.CheckoutApiFunction.resources.lambda)
+  new apigateway.LambdaIntegration(backend.CheckoutApiFunction.resources.lambda),
+  { apiKeyRequired: true }
 )
 
 showOrdersResource.addMethod(
   'POST',
-  new apigateway.LambdaIntegration(backend.ShowOrdersApiFunction.resources.lambda)
+  new apigateway.LambdaIntegration(backend.ShowOrdersApiFunction.resources.lambda),
+  { apiKeyRequired: true }
 )
 
 showOrderByIdResource.addMethod(
   'POST',
-  new apigateway.LambdaIntegration(backend.ShowOrderByIdApiFunction.resources.lambda)
+  new apigateway.LambdaIntegration(backend.ShowOrderByIdApiFunction.resources.lambda),
+  { apiKeyRequired: true }
 )
 
 getProductbyIdResource.addMethod(
   'GET',
-  new apigateway.LambdaIntegration(backend.GetProductByIdApiFunction.resources.lambda)
+  new apigateway.LambdaIntegration(backend.GetProductByIdApiFunction.resources.lambda),
+  { apiKeyRequired: true }
 )
 
 productsResource.addMethod(
   'GET',
-  new apigateway.LambdaIntegration(backend.ExploreProductApiFunction.resources.lambda)
+  new apigateway.LambdaIntegration(backend.ExploreProductApiFunction.resources.lambda),
+  { apiKeyRequired: true }
 );
+
+// The existing usage plan (ID: uuepjj) lives in the same region as this API
+// (eu-north-1). CDK's imported IUsagePlan (fromUsagePlanId) has no addApiStage,
+// and recreating the plan here would detach the two APIs already attached to
+// uuepjj. So the new stage is linked to the plan out-of-band with the AWS CLI
+// after each `ampx` deploy (see the association command in the task notes):
+//
+//   aws apigateway update-usage-plan --usage-plan-id uuepjj --region eu-north-1 \
+//     --patch-operations op=add,path=/apiStages,value=<restApiId>:v1
+//
+// Per-brand API keys are minted into this same usage plan by the deploy-brand
+// Lambda so each brand MCP container can call the routes above.
+export const PAYALLY_USAGE_PLAN_ID = 'uuepjj';
+export const PAYALLY_USAGE_PLAN_REGION = 'eu-north-1';
 

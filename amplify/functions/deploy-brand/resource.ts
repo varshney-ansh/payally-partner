@@ -10,6 +10,10 @@ export const deployBrandFunction = defineFunction({
         // Region the brand stacks are deployed into (ECR image, ElastiCache,
         // and the template bucket all live in eu-west-1).
         BRAND_STACK_REGION: "eu-west-1",
+        // Region of the Payally API + usage plan (API Gateway is in eu-north-1).
+        PAYALLY_API_REGION: "eu-north-1",
+        // Existing usage plan the per-brand API keys are attached to.
+        PAYALLY_USAGE_PLAN_ID: "uuepjj",
         // Public S3 URL of the uploaded CloudFormation template.
         BRAND_TEMPLATE_URL: "https://payally-partner-personal-bucket.s3.eu-west-1.amazonaws.com/brandmcptemplate.json",
         // Shared across all brands. Pass secret() references directly — the
