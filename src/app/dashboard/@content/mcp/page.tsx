@@ -17,7 +17,10 @@ import {
     Table,
 } from "@cloudscape-design/components";
 import type { StatusIndicatorProps } from "@cloudscape-design/components";
+import CodeView from "@cloudscape-design/code-view/code-view";
+import jsonHighlight from "@cloudscape-design/code-view/highlight/json";
 import {
+    buildMcpClientConfig,
     fetchBrandDeployStatus,
     loadBrandDeployment,
     persistDeploymentStatus,
@@ -245,6 +248,8 @@ export default function McpPage() {
                 </SpaceBetween>
             </Container>
 
+            {isLive && <McpClientConfigCard deployment={deployment} />}
+
             {live && live.events.length > 0 && (
                 <Container header={<Header variant="h2">Recent activity</Header>}>
                     <Table
@@ -281,5 +286,75 @@ export default function McpPage() {
                 </Container>
             )}
         </SpaceBetween>
+    );
+}
+
+// ── MCP client config for customers ───────────────────────────────────────
+function McpClientConfigCard({ deployment }: { deployment: BrandDeployment }) {
+    const { serverKey, mcpUrl, configJson } = buildMcpClientConfig(deployment);
+
+    return (
+        <Container
+            header={
+                <Header
+                    variant="h2"
+                    description="Share this with your customers so they can add your store to their AI client app (Claude Desktop, Kiro, Cursor, and other MCP-compatible clients)."
+                >
+                    Connect to AI clients
+                </Header>
+            }
+        >
+            <SpaceBetween size="l">
+                <KeyValuePairs
+                    columns={2}
+                    items={[
+                        { label: "Server name", value: serverKey },
+                        {
+                            label: "MCP endpoint",
+                            value: (
+                                <SpaceBetween direction="horizontal" size="xs">
+                                    <Link href={mcpUrl} external>
+                                        {mcpUrl}
+                                    </Link>
+                                    <CopyToClipboard
+                                        copyButtonText="Copy"
+                                        copyErrorText="Failed to copy"
+                                        copySuccessText="Copied"
+                                        textToCopy={mcpUrl}
+                                        variant="icon"
+                                    />
+                                </SpaceBetween>
+                            ),
+                        },
+                    ]}
+                />
+
+                <div>
+                    <Box variant="awsui-key-label" margin={{ bottom: "xs" }}>
+                        Client configuration
+                    </Box>
+                    <CodeView
+                        content={configJson}
+                        highlight={jsonHighlight}
+                        lineNumbers
+                        actions={
+                            <CopyToClipboard
+                                copyButtonText="Copy"
+                                copyErrorText="Failed to copy"
+                                copySuccessText="Copied"
+                                textToCopy={configJson}
+                                variant="icon"
+                            />
+                        }
+                    />
+                </div>
+
+                <Box variant="small" color="text-body-secondary">
+                    Customers paste the block above into their AI client&apos;s MCP settings
+                    (inside the <code>mcpServers</code> object). Orders placed through the
+                    assistant are attributed to your PayPal merchant account automatically.
+                </Box>
+            </SpaceBetween>
+        </Container>
     );
 }

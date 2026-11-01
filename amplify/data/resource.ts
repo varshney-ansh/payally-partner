@@ -33,7 +33,9 @@ const schema = a.schema({
     })
   })
   .identifier(['paypalMerchantId', 'id'])
-  .authorization(allow => [allow.guest()]),
+  // guest: unauthenticated writers (checkout flow); authenticated: signed-in
+  // merchant dashboard reads via the identity pool's authenticated role.
+  .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   OrderItem: a.customType({
     name: a.string(),
@@ -59,7 +61,9 @@ const schema = a.schema({
     items: a.ref('OrderItem').array(),
   })
     .identifier(['paypalMerchantId', 'id'])
-    .authorization(allow => [allow.guest()]),
+    // guest: unauthenticated writers (checkout flow); authenticated: signed-in
+    // merchant dashboard reads via the identity pool's authenticated role.
+    .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   // One record per brand deployment (one MCP server per merchant,
   // keyed by paypalMerchantId).
@@ -170,7 +174,7 @@ const schema = a.schema({
     primaryEmailConfirmed: a.boolean(),
     OAuth: a.ref('PayPalOAuthIntegration').array(),
   })
-    .authorization(allow => [allow.guest()]),
+    .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   StoreMerchantInfo: a.model({
     id: a.id(),
@@ -181,7 +185,7 @@ const schema = a.schema({
     consentStatus: a.string(),
     isEmailConfirmed: a.boolean(),
   })
-    .authorization(allow => [allow.guest()]),
+    .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   PayPalPlatformAccessTokenResponse: a.customType({
     scope: a.string(),

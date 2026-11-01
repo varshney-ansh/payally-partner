@@ -119,6 +119,50 @@ export async function loadBrandDeployment(): Promise<BrandDeployment | null> {
     };
 }
 
+/**
+ * Build the MCP client config a merchant can share with their customers so
+ * shoppers can add this store to AI client apps (Claude Desktop, Kiro, etc.).
+ *
+ * The server key is "<subdomain>-payally" and the remote URL is the store's
+ * MCP endpoint. The merchant's PayPal merchant ID is passed through as an
+ * authorize param so the store attributes payments to this merchant.
+ */
+export function buildMcpClientConfig(deployment: BrandDeployment): {
+    serverKey: string;
+    mcpUrl: string;
+    config: Record<string, unknown>;
+    configJson: string;
+} {
+    const base = (deployment.serviceUrl || `https://${deployment.subdomain}.mcp.payally.world`).replace(
+        /\/+$/,
+        "",
+    );
+    const mcpUrl = `${base}/mcp`;
+    const serverKey = `${deployment.subdomain || "store"}-payally`;
+
+    const serverEntry = {
+        command: "npx",
+        args: [
+            "-y",
+            "mcp-remote@latest",
+            mcpUrl,
+            "--allow-http",
+            "--authorize-param",
+            `ext-paypal_merchant_id=${deployment.paypalMerchantId}`,
+        ],
+        disabled: false,
+    };
+
+    const config = { mcpServers: { [serverKey]: serverEntry } };
+
+    return {
+        serverKey,
+        mcpUrl,
+        config,
+        configJson: JSON.stringify(config, null, 2),
+    };
+}
+
 // Map the deploy mutation's immediate result to a model enum status.
 function initialStatusFor(mutationStatus: string): DeploymentStatus {
     switch (mutationStatus) {
