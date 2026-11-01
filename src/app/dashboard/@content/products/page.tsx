@@ -206,12 +206,12 @@ export default function ProductsPage() {
                 header={
                     <Header
                         variant="h1"
-                        description="Products from your connected store."
+                        description="Browse and manage products from your connected store."
                         counter={`(${products.length})`}
                         actions={
                             <SpaceBetween direction="horizontal" size="xs">
                                 <Button onClick={() => router.push("/dashboard/store-connect")}>
-                                    Store Connect
+                                    Manage store connection
                                 </Button>
                             </SpaceBetween>
                         }

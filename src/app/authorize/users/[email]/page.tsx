@@ -14,7 +14,9 @@ export default async function AuthorizeUsersPayments({ params, searchParams }: P
         throw new Error("either email, state or session token missing")
     } 
     const emaildecode = decodeURIComponent(email);
+    console.log({email: emaildecode, state, paypalMerchantId: ext_paypal_merchant_id})
     const res = await getUserPaymentAuthorizeLink({email: emaildecode, state, paypalMerchantId: ext_paypal_merchant_id})
+    console.log(res)
     const approvalLink = res.links[1].href
     redirect(approvalLink);
 

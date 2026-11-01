@@ -6,17 +6,20 @@ import {
     HelpPanel,
     SideNavigation,
     SpaceBetween,
+    SplitPanel,
 } from "@cloudscape-design/components";
 import { I18nProvider } from "@cloudscape-design/components/i18n";
 import messages from "@cloudscape-design/components/i18n/messages/all.en";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SplitPanelProvider, useSplitPanel } from "./split-panel-context";
 
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mounted, setMounted] = useState(false);
     const [navigationOpen, setNavigationOpen] = useState(true);
     const [toolsOpen, setToolsOpen] = useState(false);
+    const { panel, open, setOpen, clearPanel } = useSplitPanel();
 
     useEffect(() => {
         setMounted(true);
@@ -64,8 +67,44 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         Review merchant activity and manage the products connected to your PayPal account.
                     </HelpPanel>
                 }
+                splitPanelOpen={open}
+                onSplitPanelToggle={({ detail }) => {
+                    setOpen(detail.open);
+                    if (!detail.open) clearPanel();
+                }}
+                splitPanelPreferences={{ position: "bottom" }}
+                splitPanel={
+                    panel ? (
+                        <SplitPanel
+                            header={panel.header}
+                            i18nStrings={{
+                                preferencesTitle: "Split panel preferences",
+                                preferencesPositionLabel: "Split panel position",
+                                preferencesPositionDescription:
+                                    "Choose where the split panel is shown.",
+                                preferencesPositionSide: "Side",
+                                preferencesPositionBottom: "Bottom",
+                                preferencesConfirm: "Confirm",
+                                preferencesCancel: "Cancel",
+                                closeButtonAriaLabel: "Close panel",
+                                openButtonAriaLabel: "Open panel",
+                                resizeHandleAriaLabel: "Resize split panel",
+                            }}
+                        >
+                            {panel.content}
+                        </SplitPanel>
+                    ) : undefined
+                }
                 content={children}
             />
         </I18nProvider>
+    );
+}
+
+export default function DashboardShell({ children }: { children: React.ReactNode }) {
+    return (
+        <SplitPanelProvider>
+            <DashboardShellInner>{children}</DashboardShellInner>
+        </SplitPanelProvider>
     );
 }

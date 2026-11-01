@@ -8,6 +8,8 @@ import { GetProductByIdApiFunction } from '../functions/api-get-product-by-id/re
 import { CheckoutApiFunction } from '../functions/api-checkout/resource';
 import { ShowOrdersApiFunction } from '../functions/api-show-orders/resource';
 import { ShowOrderByIdApiFunction } from '../functions/api-show-order-by-id/resource';
+import { deployBrandFunction } from '../functions/deploy-brand/resource';
+import { brandDeployStatus } from '../functions/brand-deploy-status/resource';
 
 const schema = a.schema({
   CustomerUserData: a.model({
@@ -58,6 +60,58 @@ const schema = a.schema({
   })
     .identifier(['paypalMerchantId', 'id'])
     .authorization(allow => [allow.guest()]),
+
+  // One record per brand deployment (one MCP server per merchant,
+  // keyed by paypalMerchantId).
+  BrandDeployment: a
+    .model({
+      // Identity
+      paypalMerchantId: a.string().required(), // partition key — one server per merchant
+      serviceId: a.string().required(),        // "a1b2" — matches CFN stack suffix
+      subdomain: a.string().required(),        // "adidas-store"
+      stackName: a.string().required(),        // "BrandMcp-a1b2"
+      serviceUrl: a.string(),                  // "https://adidas-store.mcp.payally.world"
+
+      // Brand config (what was deployed)
+      brandName: a.string().required(),
+      brandStoreNoun: a.string(),
+      brandVoice: a.string(),
+      brandProductNouns: a.string(),
+      brandCategoryHints: a.string(),
+      auth0ClientId: a.string(),
+      imageUri: a.string(),
+      listenerRulePriority: a.integer(),
+
+      // Deployment status
+      status: a.enum([
+        "QUEUED",
+        "CREATE_IN_PROGRESS",
+        "CREATE_COMPLETE",
+        "CREATE_FAILED",
+        "UPDATE_IN_PROGRESS",
+        "UPDATE_COMPLETE",
+        "UPDATE_FAILED",
+        "ROLLBACK_IN_PROGRESS",
+        "ROLLBACK_COMPLETE",
+        "DELETE_IN_PROGRESS",
+        "DELETE_COMPLETE",
+      ]),
+      lastEventMessage: a.string(), // latest CFN event reason
+      failureReason: a.string(),    // populated on failure
+      deployedAt: a.datetime(),     // when CREATE_COMPLETE first hit
+      lastUpdatedAt: a.datetime(),  // last status poll timestamp
+
+      // CloudFormation stack outputs (ids/arns) captured once complete
+      cfnOutputs: a.json(),
+
+      // Who deployed it
+      deployedBy: a.string(), // Amplify user sub / email
+    })
+    .identifier(['paypalMerchantId'])
+    .authorization((allow) => [
+      allow.owner(), // deployer can read/write their own
+      allow.group("admins").to(["read", "update", "delete"]), // admins see all
+    ]),
 
   StoreMerchantPaypalCredentials: a.model({
     id: a.id(),
@@ -174,6 +228,56 @@ const schema = a.schema({
     .returns(a.ref('PayPalAuthJWTResponse'))
     .authorization(allow => [allow.guest()])
     .handler(a.handler.function(getPayPalAuthJWT)),
+
+  DeployBrandResponse: a.customType({
+    status: a.string(),
+    stackName: a.string(),
+    serviceId: a.string(),
+    message: a.string(),
+  }),
+
+  BrandDeployStatusEvent: a.customType({
+    resource: a.string(),
+    type: a.string(),
+    status: a.string(),
+    reason: a.string(),
+    timestamp: a.string(),
+  }),
+
+  BrandDeployStatusResponse: a.customType({
+    stackName: a.string(),
+    status: a.string(),
+    done: a.boolean(),
+    failed: a.boolean(),
+    events: a.ref('BrandDeployStatusEvent').array(),
+    mcpUrl: a.string(),
+    outputs: a.json(),
+    failureReason: a.string(),
+  }),
+
+  deployBrand: a
+    .mutation()
+    .arguments({
+      subdomain: a.string().required(),
+      serviceId: a.string().required(),
+      listenerRulePriority: a.integer().required(),
+      brandName: a.string().required(),
+      brandStoreNoun: a.string().required(),
+      brandVoice: a.string().required(),
+      brandProductNouns: a.string().required(),
+      brandCategoryHints: a.string().required(),
+      paypalMerchantId: a.string().required(),
+    })
+    .returns(a.ref('DeployBrandResponse'))
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(deployBrandFunction)),
+
+  brandDeployStatus: a
+    .query()
+    .arguments({ serviceId: a.string().required() })
+    .returns(a.ref('BrandDeployStatusResponse'))
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(brandDeployStatus)),
 })
 .authorization(allow => [allow.resource(ExploreProductApiFunction), allow.resource(GetProductByIdApiFunction), allow.resource(CheckoutApiFunction), allow.resource(ShowOrdersApiFunction), allow.resource(ShowOrderByIdApiFunction)]);
 

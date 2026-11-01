@@ -168,7 +168,7 @@ export default function StoreConnectPage() {
     if (loadError) {
         return (
             <SpaceBetween size="l">
-                <Header variant="h1">Store Connect</Header>
+                <Header variant="h1">Store connections</Header>
                 <Alert type="error">{loadError}</Alert>
             </SpaceBetween>
         );
@@ -182,11 +182,25 @@ export default function StoreConnectPage() {
 
     return (
         <SpaceBetween size="l">
-            <Header variant="h1">Store Connect</Header>
+            <Header
+                variant="h1"
+                description="Connect your product catalog to sync products and power your AI store."
+            >
+                Store connections
+            </Header>
 
             {/* â”€â”€ View: select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {view === "select" && (
-                <Container>
+                <Container
+                    header={
+                        <Header
+                            variant="h2"
+                            description="Choose the platform that hosts your product catalog."
+                        >
+                            Store provider
+                        </Header>
+                    }
+                >
                     <SpaceBetween size="m">
                         <Tiles
                             value={selectedTile}
