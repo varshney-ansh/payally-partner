@@ -33,8 +33,8 @@ const schema = a.schema({
     })
   })
   .identifier(['paypalMerchantId', 'id'])
-  // guest: unauthenticated writers (checkout flow); authenticated: signed-in
-  // merchant dashboard reads via the identity pool's authenticated role.
+  // guest: unauthenticated writers (checkout flow). authenticated: signed-in
+  // merchant dashboard reads (authMode "userPool" — Cognito user pool).
   .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   OrderItem: a.customType({
@@ -61,8 +61,8 @@ const schema = a.schema({
     items: a.ref('OrderItem').array(),
   })
     .identifier(['paypalMerchantId', 'id'])
-    // guest: unauthenticated writers (checkout flow); authenticated: signed-in
-    // merchant dashboard reads via the identity pool's authenticated role.
+    // guest: unauthenticated writers (checkout flow). authenticated: signed-in
+    // merchant dashboard reads (authMode "userPool" — Cognito user pool).
     .authorization(allow => [allow.guest(), allow.authenticated()]),
 
   // One record per brand deployment (one MCP server per merchant,

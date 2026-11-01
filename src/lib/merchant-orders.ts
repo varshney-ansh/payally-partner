@@ -59,7 +59,7 @@ export async function loadMerchantOrders(): Promise<MerchantOrder[]> {
     do {
         const { data, errors, nextToken: token } = await client.models.Order.list({
             filter: { paypalMerchantId: { eq: merchantId } },
-            authMode: "identityPool",
+            authMode: "userPool",
             nextToken,
             limit: 200,
         });

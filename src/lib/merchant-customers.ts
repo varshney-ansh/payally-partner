@@ -55,7 +55,7 @@ export async function loadMerchantCustomers(): Promise<MerchantCustomer[]> {
     do {
         const { data, errors, nextToken: token } = await client.models.CustomerUserData.list({
             filter: { paypalMerchantId: { eq: merchantId } },
-            authMode: "identityPool",
+            authMode: "userPool",
             nextToken,
             limit: 200,
         });
