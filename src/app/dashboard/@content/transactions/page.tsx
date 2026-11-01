@@ -108,7 +108,7 @@ export default function TransactionsPage() {
             <Container
                 header={
                     <Header variant="h2" description="A snapshot of orders placed through your AI store.">
-                        Summary
+                        Overview
                     </Header>
                 }
             >
@@ -193,7 +193,7 @@ export default function TransactionsPage() {
                             <Box variant="p" color="inherit">
                                 {filteringText
                                     ? "Try a different search."
-                                    : "Orders placed through your AI store will appear here."}
+                                    : "When a shopper checks out through your AI store, the order shows up here."}
                             </Box>
                         </SpaceBetween>
                     </Box>
@@ -213,9 +213,9 @@ export default function TransactionsPage() {
                     <Header
                         variant="h1"
                         counter={loading ? undefined : `(${orders.length})`}
-                        description="Orders and payments processed through your PayPal merchant account."
+                        description="Every order your AI store has processed through PayPal, with fees and payout details."
                     >
-                        Transactions
+                        Orders
                     </Header>
                 }
                 pagination={

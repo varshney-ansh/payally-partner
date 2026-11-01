@@ -47,14 +47,34 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 navigation={
                     <SideNavigation
                         activeHref={pathname}
-                        header={{ href: "/dashboard", text: "Merchant Account" }}
+                        header={{ href: "/dashboard", text: "Merchant account" }}
                         items={[
                             { type: "link", text: "Overview", href: "/dashboard" },
-                            { type: "link", text: "Products", href: "/dashboard/products" },
-                            { type: "link", text: "Store Connect", href: "/dashboard/store-connect" },
-                            { type: "link", text: "Transactions", href: "/dashboard/transactions" },
-                            { type: "link", text: "MCP", href: "/dashboard/mcp" },
-                            { type: "link", text: "Settings", href: "/dashboard/settings" },
+                            {
+                                type: "section-group",
+                                title: "Store",
+                                items: [
+                                    { type: "link", text: "Products", href: "/dashboard/products" },
+                                    { type: "link", text: "Orders", href: "/dashboard/transactions" },
+                                    { type: "link", text: "Customers", href: "/dashboard/customers" },
+                                ],
+                            },
+                            {
+                                type: "section-group",
+                                title: "AI store",
+                                items: [
+                                    { type: "link", text: "AI store", href: "/dashboard/mcp" },
+                                ],
+                            },
+                            {
+                                type: "section-group",
+                                title: "Settings",
+                                items: [
+                                    { type: "link", text: "Store connections", href: "/dashboard/store-connect" },
+                                    { type: "link", text: "PayPal account", href: "/dashboard/settings" },
+                                    { type: "link", text: "Branding", href: "/dashboard/settings#branding" },
+                                ],
+                            },
                             { type: "divider" },
                             { type: "link", text: "Sign out", href: "/signout" },
                         ]}
