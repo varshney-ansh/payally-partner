@@ -39,6 +39,10 @@ async function getPaypalMerchantId(): Promise<string> {
     const attributes = await fetchUserAttributes();
     const merchantId = attributes["custom:custom:paypalMerchId"];
     if (!merchantId) {
+        console.error(
+            "[merchant-orders] missing PayPal merchant ID. user attributes present:",
+            Object.keys(attributes),
+        );
         throw new Error("Your account is missing its PayPal merchant ID.");
     }
     return merchantId;
@@ -60,7 +64,10 @@ export async function loadMerchantOrders(): Promise<MerchantOrder[]> {
             limit: 200,
         });
         if (errors?.length) {
-            throw new Error("Unable to load your orders.");
+            // Surface the real AppSync error so failures are diagnosable in
+            // the live environment instead of a generic message.
+            console.error("[merchant-orders] Order.list errors:", JSON.stringify(errors, null, 2));
+            throw new Error(errors.map((e) => e.message).join("; ") || "Unable to load your orders.");
         }
         all.push(...data);
         nextToken = token;
