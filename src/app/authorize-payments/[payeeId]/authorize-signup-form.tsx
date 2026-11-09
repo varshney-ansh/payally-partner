@@ -132,8 +132,8 @@ export default function AuthorizeSignupForm({ email, paypalMerchantId }: Props) 
                     userAttributes: {
                         email,
                         name,
-                        "custom:businesstype": businessType,
-                        "custom:custom:paypalmerchid": paypalMerchantId,
+                        "custom:businessType": businessType,
+                        "custom:paypalMerchId": paypalMerchantId,
                     },
                 },
             });
