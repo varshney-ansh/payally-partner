@@ -20,7 +20,7 @@ export const deployBrandFunction = defineFunction({
         AUTH0_TENANT_DOMAIN: "dev-rve1br3wqis2kod3.us.auth0.com",
         AUTH0_MGMT_AUDIENCE: "https://dev-rve1br3wqis2kod3.us.auth0.com/api/v2/",
         // Public S3 URL of the uploaded CloudFormation template.
-        BRAND_TEMPLATE_URL: "https://payally-partner-personal-bucket.s3.eu-west-1.amazonaws.com/brandmcptemplate.json",
+        BRAND_TEMPLATE_URL: "https://payally-partner-brand.s3.eu-west-1.amazonaws.com/brandmcptemplate.json",
         // Shared across all brands. Pass secret() references directly — the
         // previous `secret(...) || throw` form coerced the BackendSecret
         // reference and left the value undefined at runtime.

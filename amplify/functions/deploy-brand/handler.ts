@@ -171,7 +171,7 @@ export const handler: Schema["deployBrand"]["functionHandler"] = async (event) =
 
     // Route 53 hosted zone for payally.world. Hardcoded (stable, known value)
     // rather than passed from the event or a secret that resolves empty at runtime.
-    const HOSTED_ZONE_ID = "Z0712421J62HNVYUMM0N";
+    const HOSTED_ZONE_ID = "Z06211796CSRMMF1W25I";
 
     // Shared Auth0 credentials come from secrets. Guard against empty/unresolved
     // values so we fail with a clear message instead of a cryptic CFN error.

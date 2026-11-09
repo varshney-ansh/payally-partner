@@ -8,26 +8,27 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
-  multifactor: {
-    mode: 'REQUIRED',
-    email: true,
-  },
+  // MFA temporarily disabled for sandbox testing — re-enable for production
+  // multifactor: {
+  //   mode: 'REQUIRED',
+  //   email: true,
+  // },
   userAttributes: {
-    'custom:businesstype': {
+    'custom:businessType': {
       dataType: 'String',
       mutable: true,
     },
-    'custom:custom:paypalmerchid': {
+    'custom:custom:paypalMerchId': {
       dataType: 'String',
       mutable: true,
     },
   },
-  accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
-  senders: {
-    email: {
-      fromEmail: "no-reply@payally.world",
-      fromName: "Payally Partner",
-      replyTo: "inquiries@payally.world"
-    },
-  },
+  // accountRecovery: "EMAIL_AND_PHONE_WITHOUT_MFA",
+  // senders: {
+  //   email: {
+  //     fromEmail: "no-reply@payally.world",
+  //     fromName: "Payally Partner",
+  //     replyTo: "inquiries@payally.world"
+  //   },
+  // },
 });
