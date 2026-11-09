@@ -11,9 +11,9 @@ export const deployBrandFunction = defineFunction({
         // and the template bucket all live in eu-west-1).
         BRAND_STACK_REGION: "eu-west-1",
         // Region of the Payally API + usage plan (API Gateway is in eu-north-1).
-        PAYALLY_API_REGION: "eu-north-1",
+        PAYALLY_API_REGION: "eu-west-1",
         // Existing usage plan the per-brand API keys are attached to.
-        PAYALLY_USAGE_PLAN_ID: "uuepjj",
+        PAYALLY_USAGE_PLAN_ID: "gbo60j",
         // Auth0 tenant (canonical domain) + Management API audience used to
         // provision a per-brand Resource Server (API) whose audience is the
         // brand's MCP URL. The same M2M app (AUTH0_CLIENT_ID/SECRET) is used.

@@ -174,6 +174,6 @@ productsResource.addMethod(
 //
 // Per-brand API keys are minted into this same usage plan by the deploy-brand
 // Lambda so each brand MCP container can call the routes above.
-export const PAYALLY_USAGE_PLAN_ID = 'uuepjj';
-export const PAYALLY_USAGE_PLAN_REGION = 'eu-north-1';
+export const PAYALLY_USAGE_PLAN_ID = 'gbo60j';
+export const PAYALLY_USAGE_PLAN_REGION = 'eu-west-1';
 
