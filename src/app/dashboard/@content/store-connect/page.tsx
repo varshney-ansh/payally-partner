@@ -52,7 +52,7 @@ export default function StoreConnectPage() {
         Promise.all([
             loadStoreSettings(),
             fetchUserAttributes().then(
-                (attrs) => (attrs["custom:custom:paypalMerchId"] as string) ?? "",
+                (attrs) => (attrs["custom:custom:paypalmerchid"] as string) ?? "",
             ),
         ])
             .then(([storeSettings, merchantId]) => {

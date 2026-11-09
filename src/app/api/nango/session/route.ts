@@ -19,7 +19,7 @@ export async function POST() {
             nextServerContext: { cookies },
             operation: (contextSpec) => fetchUserAttributes(contextSpec),
         });
-        const merchantId = attributes["custom:custom:paypalMerchId"];
+        const merchantId = attributes["custom:custom:paypalmerchid"];
         if (!merchantId) {
             return NextResponse.json(
                 { error: "Merchant ID not found on account." },

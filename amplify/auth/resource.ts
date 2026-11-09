@@ -13,11 +13,11 @@ export const auth = defineAuth({
     email: true,
   },
   userAttributes: {
-    'custom:businessType': {
+    'custom:businesstype': {
       dataType: 'String',
       mutable: true,
     },
-    'custom:custom:paypalMerchId': {
+    'custom:custom:paypalmerchid': {
       dataType: 'String',
       mutable: true,
     },

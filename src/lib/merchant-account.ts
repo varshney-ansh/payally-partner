@@ -49,13 +49,13 @@ export async function getMerchantProfile(): Promise<MerchantProfile> {
     const attributes = await fetchUserAttributes();
     return {
         email: attributes.email ?? "—",
-        paypalMerchantId: attributes["custom:custom:paypalMerchId"] ?? "—",
+        paypalMerchantId: attributes["custom:custom:paypalmerchid"] ?? "—",
     };
 }
 
 async function getPaypalMerchantId(): Promise<string> {
     const attributes = await fetchUserAttributes();
-    const merchantId = attributes["custom:custom:paypalMerchId"];
+    const merchantId = attributes["custom:custom:paypalmerchid"];
     if (!merchantId) {
         throw new Error("Your account is missing its PayPal merchant ID.");
     }
