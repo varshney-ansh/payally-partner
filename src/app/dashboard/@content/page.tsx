@@ -67,7 +67,7 @@ export default function OverviewPage() {
                     aiStoreDeployed: Boolean(deployment),
                     aiStoreLive,
                     aiStoreUrl: deployment?.serviceUrl ?? "",
-                    merchantId: attrs["custom:custom:paypalmerchid"] ?? "—",
+                    merchantId: attrs["custom:paypalMerchId"] ?? "—",
                     merchantEmail: attrs.email ?? "—",
                 });
             })

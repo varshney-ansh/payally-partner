@@ -37,7 +37,7 @@ export interface MerchantOrder {
 
 async function getPaypalMerchantId(): Promise<string> {
     const attributes = await fetchUserAttributes();
-    const merchantId = attributes["custom:custom:paypalmerchid"];
+    const merchantId = attributes["custom:paypalMerchId"];
     if (!merchantId) {
         console.error(
             "[merchant-orders] missing PayPal merchant ID. user attributes present:",
